@@ -33,9 +33,10 @@ final class EffectivePrimitiveTypeIdentifierService {
     /**
      * <p>Returns strict effective primitive type of a variable</p>
      * @param mixed $data
+     * @param bool $trim
      * @return bool|int|float|string|null
      */
-    public function returnStrictType($data) {
+    public function returnStrictType($data, $trim = false) {
         if ($data === null) {
             return null;
         }
@@ -47,7 +48,7 @@ final class EffectivePrimitiveTypeIdentifierService {
             return $this->getSanitizedNumber($data);
         }
         if (is_string($data)) {
-            return $this->getSanitizedString((string) $data);
+            return $this->getSanitizedString((string) $data, $trim);
         }
         return null;
     }
@@ -98,6 +99,7 @@ final class EffectivePrimitiveTypeIdentifierService {
     /**
      * Return sanitized string 
      * @param string $value
+     * @param bool $trim
      * @return string
      */
     private function getSanitizedString($value, $trim=false) {

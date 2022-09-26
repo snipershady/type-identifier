@@ -63,6 +63,15 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertEquals($value, $result);
         $this->assertIsBool($result);
     }
+    
+    public function testBoolTrueAsString(): void {
+        $value = "true";
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->returnStrictType($value);
+        $this->assertTrue($value === $result);
+        $this->assertEquals($value, $result);
+        $this->assertIsString($result);
+    }
 
     public function testBoolFalse(): void {
         $value = false;
@@ -139,6 +148,16 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $value = "snipershady";
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->returnStrictType($value);
+        $this->assertTrue($value === $result);
+        $this->assertEquals($value, $result);
+        $this->assertIsString($result);
+    }
+    
+    public function testStringTrimmed(): void {
+        $value = "snipershady";
+        $whitespaces = "      ";
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->returnStrictType($value.$whitespaces, true); // Trim enabled
         $this->assertTrue($value === $result);
         $this->assertEquals($value, $result);
         $this->assertIsString($result);
