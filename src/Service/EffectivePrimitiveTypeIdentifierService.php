@@ -32,25 +32,38 @@ final class EffectivePrimitiveTypeIdentifierService {
 
     /**
      * <p>Returns strict effective primitive type of a variable</p>
-     * @param mixed $data
-     * @param bool $trim
+     * @param mixed $data <p>Variable to sanitize and get again with right strict primitive type</p>
+     * @param bool $trim <p>Trim value if type is an String</p>
+     * @param bool $forceString  <p>Force string parsing for values like "1", so it will be handlet as String and not as integer</p>
      * @return bool|int|float|string|null
      */
-    public function returnStrictType($data, $trim = false) {
+    public function getTypedValue($data, $trim = false, $forceString = false) {
         if ($data === null) {
             return null;
         }
 
-        if (is_bool($data)) {
+        if (!$forceString && is_bool($data)) {
             return $this->getSanitizedBool((bool) $data);
         }
-        if (is_numeric($data)) {
+        if (!$forceString && is_numeric($data)) {
             return $this->getSanitizedNumber($data);
         }
-        if (is_string($data)) {
+        if ($forceString || is_string($data)) {
             return $this->getSanitizedString((string) $data, $trim);
         }
         return null;
+    }
+
+    /**
+     * <p>Returns value from a needle of an array, sanitized and with effective primitive strict type</p>
+     * @param string $needle <p>Value to check.</p>
+     * @param array<mixed> $array <p>An array with keys to check.</p>
+     * @param bool $trim <p>Trim value if type is an String</p>
+     * @param bool $forceString  <p>Force string parsing for values like "1"</p>
+     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     */
+    public function getTypedValueFromArray($needle, array $array, $trim = false, $forceString = false) {
+        return is_array($array) && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString) : null;
     }
 
     /**
@@ -102,7 +115,7 @@ final class EffectivePrimitiveTypeIdentifierService {
      * @param bool $trim
      * @return string
      */
-    private function getSanitizedString($value, $trim=false) {
+    private function getSanitizedString($value, $trim = false) {
         $result = (string) filter_var($value, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
         return $trim ? trim($result) : $result;
     }
