@@ -2,57 +2,66 @@
 Effective primitive type identifier.
 A free library to identify and sanitize data from associative array, super global array or Http Request
 
-
+## Load dependencie
 ```php
 use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
+```
 
-$value = 1;
+## Prerequisites
+This library can ben instaled inside a projeti with PHP 5.6, but is 100% ready for PHP 8.1 and PHP doc is PHP 8.1 oriented.
+PHP 5.6 need this library more than newest version, but it can be useful inside a brand new project too to handle and sanitize,
+HTTP Request values or heterogeneous associative array
+
+### Some example
+```php
 $ept = new EffectivePrimitiveTypeIdentifierService();
-$result = $ept->returnStrictType($value);   // Result will be 1 with type int
+$result = $ept->getTypedValue(1);   // Result will be 1 with type int
 
 ```
 
 ```php
-use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
-
-$value = "1";
 $ept = new EffectivePrimitiveTypeIdentifierService();
-$result = $ept->returnStrictType($value);   // Result will be 1 with type int
+$result = $ept->getTypedValue("1");   // Result will be 1 with type int
 
 ```
 
 ```php
-use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
-
-$value = "1.1";
-$array["value"] = $value;
+$array["value"] = "1.1";
 $ept = new EffectivePrimitiveTypeIdentifierService();
-$result = $ept->returnStrictType($array["value"]);  // Result will be 1.1 with type float
+$result = $ept->getTypedValue($array["value"]);  // Result will be 1.1 with type float
 
 ```
 
 ```php
-use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
-
 $value = "1.1a";
 $array["value"] = $value;
 $ept = new EffectivePrimitiveTypeIdentifierService();
-$result = $ept->returnStrictType($array["value"]); // Result will be "1.1a" with type string
+$result = $ept->getTypedValue($array["value"]); // Result will be "1.1a" with type string
 ```
 
 ```php
-use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
-
-$value = 1 === 1;
 $ept = new EffectivePrimitiveTypeIdentifierService();
-$result = $ept->returnStrictType($value); // result will be true type bool
+$result = $ept->getTypedValue(1 === 1); // result will be true type bool
 ```
 
 ```php
-use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
+$ept = new EffectivePrimitiveTypeIdentifierService();
+$result = $ept->getTypedValue("snipershady       ", true); // Trim enabled. Result will be "snipershady" without any whitespace and type string
+```
 
+### Array sanitizing with offset validation 
+
+```php
 $value = "snipershady";
-$whitespaces = "      ";
+$array["value"] = $value;
 $ept = new EffectivePrimitiveTypeIdentifierService();
-$result = $ept->returnStrictType($value.$whitespaces, true); // Trim enabled. Result will be "snipershady" without any whitespace and type string
+$result = $ept->getTypedValueFromArray("value", $array);  // Result will be "snipershady" sanitized and type string
+```
+
+### Array sanitizing retrurn null on invalid offset
+```php
+$value = "snipershady";
+$array["value"] = $value;
+$ept = new EffectivePrimitiveTypeIdentifierService();
+$result = $ept->getTypedValueFromArray("invalid_offset", $array);  // Result null. "invalid_offset" is not a valid offset for the array.
 ```
