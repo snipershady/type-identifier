@@ -24,6 +24,7 @@ use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
 /**
  * Description of EffectivePrimitiveTypeTest
  * @example ./vendor/bin/phpunit tests/EffectivePrimitiveTypeTest.php 
+ * @example ./vendor/bin/phpunit tests/EffectivePrimitiveTypeTest.php --colors="auto" --debug
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
@@ -261,7 +262,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertEquals($array["value"], $result);
         $this->assertIsString($result);
     }
-    
+
     public function testAssociativeArraySantizieWitTrimMethod(): void {
         $value = "snipershady    ";
         $array["value"] = $value;
@@ -271,7 +272,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertEquals(trim($array["value"]), $result);
         $this->assertIsString($result);
     }
-    
+
     public function testAssociativeArraySantizieIntAsStringWitTrimMethod(): void {
         $value = "1";
         $array["value"] = $value;
@@ -281,17 +282,17 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertEquals(trim($array["value"]), $result);
         $this->assertIsString($result);
     }
-    
+
     public function testAssociativeArraySantizieIntWitTrimMethod(): void {
         $value = "1 ";
         $array["value"] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValueFromArray("value", $array, true);
-        $this->assertTrue((int)($array["value"]) === $result);
-        $this->assertEquals((int)($array["value"]), $result);
+        $this->assertTrue((int) ($array["value"]) === $result);
+        $this->assertEquals((int) ($array["value"]), $result);
         $this->assertIsInt($result);
     }
-    
+
     public function testStringWithHTML(): void {
         $value = 'asd"><Svg Only=1 OnLoad=confirm(document.cookie)>';
         $ept = new EffectivePrimitiveTypeIdentifierService();
@@ -300,7 +301,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
     }
-    
+
     public function testStringWithHTMLTwo(): void {
         $value = '><svg/onload=confirm(1)';
         $ept = new EffectivePrimitiveTypeIdentifierService();
@@ -309,7 +310,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
     }
-    
+
     public function testPlainStringWithHtmlSanitizer(): void {
         $value = "C'era una volta, cappuccetto rosso. E c'era anche un lupo cattivo!";
         $ept = new EffectivePrimitiveTypeIdentifierService();
@@ -319,4 +320,16 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertIsString($result);
     }
 
+    public function testStringWithHTMLNoSanitizing(): void {
+        $value = 'asd"><Svg Only=1 OnLoad=confirm(document.cookie)>';
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($value, true, true);
+        $this->assertTrue($value === $result);
+        $this->assertEquals($value, $result);
+        $this->assertIsString($result);
+        $result = $ept->getTypedValue($value, true, true, true);
+        $this->assertTrue($value !== $result);
+        $this->assertNotEquals($value, $result);
+        $this->assertIsString($result);
+    }
 }
