@@ -35,9 +35,10 @@ final class EffectivePrimitiveTypeIdentifierService {
      * @param mixed $data <p>Variable to sanitize and get again with right strict primitive type</p>
      * @param bool $trim <p>Trim value if type is an String</p>
      * @param bool $forceString  <p>Force string parsing for values like "1", so it will be handlet as String and not as integer</p>
+     * @param bool $sanitizeHtml <p>When true, the string will be sanitized from HTML tags</p>
      * @return bool|int|float|string|null
      */
-    public function getTypedValue($data, $trim = false, $forceString = false) {
+    public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false) {
         if ($data === null) {
             return null;
         }
@@ -49,7 +50,7 @@ final class EffectivePrimitiveTypeIdentifierService {
             return $this->getSanitizedNumber($data);
         }
         if ($forceString || is_string($data)) {
-            return $this->getSanitizedString((string) $data, $trim);
+            return $this->getSanitizedString((string) $data, $trim, $sanitizeHtml);
         }
         return null;
     }
@@ -113,11 +114,39 @@ final class EffectivePrimitiveTypeIdentifierService {
      * Return sanitized string 
      * @param string $value
      * @param bool $trim
+     * @param bool $sanitizeHtml
      * @return string
      */
-    private function getSanitizedString($value, $trim = false) {
+    private function getSanitizedString($value, $trim = false, $sanitizeHtml = false) {
+        if ($sanitizeHtml) {
+            return $this->sanitizeHtml($value, $trim);
+        }
         $result = (string) filter_var($value, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
         return $trim ? trim($result) : $result;
     }
 
+    /**
+     * 
+     * @param string $string
+     * @param bool $trim
+     * @return string
+     */
+    private function sanitizeHtml($string, $trim = false) {
+        $stringTrimmed = $trim ? trim($string) : $string;
+        $stringFiltered = (string) filter_var($stringTrimmed, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
+        $stringStripped = strip_tags($stringFiltered);
+        $pattern = [
+            '/\&/',
+            '/</',
+            "/>/",
+            '/"/',
+            "/%/",
+            '/\(/',
+            '/\)/',
+            '/\+/'
+        ];
+        $replacement = "";
+
+        return (string) preg_replace($pattern, $replacement, $stringStripped);
+    }
 }

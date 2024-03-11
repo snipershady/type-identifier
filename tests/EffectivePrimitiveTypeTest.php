@@ -23,7 +23,7 @@ use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
 
 /**
  * Description of EffectivePrimitiveTypeTest
- * @example ./vendor/phpunit/phpunit/phpunit --verbose tests/EffectivePrimitiveTypeTest.php 
+ * @example ./vendor/bin/phpunit tests/EffectivePrimitiveTypeTest.php 
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
@@ -290,6 +290,33 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase {
         $this->assertTrue((int)($array["value"]) === $result);
         $this->assertEquals((int)($array["value"]), $result);
         $this->assertIsInt($result);
+    }
+    
+    public function testStringWithHTML(): void {
+        $value = 'asd"><Svg Only=1 OnLoad=confirm(document.cookie)>';
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($value, true, true, true);
+        $this->assertTrue($value !== $result);
+        $this->assertNotEquals($value, $result);
+        $this->assertIsString($result);
+    }
+    
+    public function testStringWithHTMLTwo(): void {
+        $value = '><svg/onload=confirm(1)';
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($value, true, true, true);
+        $this->assertTrue($value !== $result);
+        $this->assertNotEquals($value, $result);
+        $this->assertIsString($result);
+    }
+    
+    public function testPlainStringWithHtmlSanitizer(): void {
+        $value = "C'era una volta, cappuccetto rosso. E c'era anche un lupo cattivo!";
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($value, true, true, true);
+        $this->assertTrue($value === $result);
+        $this->assertEquals($value, $result);
+        $this->assertIsString($result);
     }
 
 }
