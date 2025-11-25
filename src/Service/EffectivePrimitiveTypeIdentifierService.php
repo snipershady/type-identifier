@@ -165,6 +165,7 @@ final class EffectivePrimitiveTypeIdentifierService
             FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
         );
         $stringStripped = strip_tags($stringFiltered);
+        $stringDecoded = html_entity_decode($stringStripped);
         $pattern = [
             '/\&/',
             '/</',
@@ -177,6 +178,6 @@ final class EffectivePrimitiveTypeIdentifierService
         ];
         $replacement = "";
 
-        return (string) preg_replace($pattern, $replacement, $stringStripped);
+        return (string) preg_replace($pattern, $replacement, $stringDecoded);
     }
 }

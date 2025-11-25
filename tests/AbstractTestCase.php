@@ -28,6 +28,6 @@ use PHPUnit\Framework\TestCase;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-abstract class AbstractTestCase extends TestCase {
-    
+abstract class AbstractTestCase extends TestCase
+{
 }
