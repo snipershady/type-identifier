@@ -36,13 +36,13 @@ return RectorConfig::configure()
                 //typeDeclarations: true,
                 //rectorPreset: true
                 )
-                ->withPhpSets(php84: true)
-                ->withPhpVersion(PhpVersion::PHP_84)
+                ->withPhpSets(php56: true)
+                ->withPhpVersion(PhpVersion::PHP_56)
                 ->withAttributesSets(symfony: true, doctrine: true)
                 ->withComposerBased(twig: true, doctrine: true, phpunit: true, symfony: true)
                 ->withSets(
                         [
-                            LevelSetList::UP_TO_PHP_84
+                            LevelSetList::UP_TO_PHP_56
                         ]
                 )
                 ->withRules(

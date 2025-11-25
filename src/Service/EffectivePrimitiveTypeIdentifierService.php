@@ -24,12 +24,8 @@ namespace TypeIdentifier\Service;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-final class EffectivePrimitiveTypeIdentifierService {
-
-    public function __construct() {
-        
-    }
-
+final class EffectivePrimitiveTypeIdentifierService
+{
     /**
      * <p>Returns strict effective primitive type of a variable</p>
      * @param mixed $data <p>Variable to sanitize and get again with right strict primitive type</p>
@@ -38,13 +34,14 @@ final class EffectivePrimitiveTypeIdentifierService {
      * @param bool $sanitizeHtml <p>When true, the string will be sanitized from HTML tags</p>
      * @return bool|int|float|string|null
      */
-    public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false) {
+    public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false)
+    {
         if ($data === null) {
             return null;
         }
 
         if (!$forceString && is_bool($data)) {
-            return $this->getSanitizedBool((bool) $data);
+            return $this->getSanitizedBool($data);
         }
         if (!$forceString && is_numeric($data)) {
             return $this->getSanitizedNumber($data);
@@ -63,8 +60,35 @@ final class EffectivePrimitiveTypeIdentifierService {
      * @param bool $forceString  <p>Force string parsing for values like "1"</p>
      * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
      */
-    public function getTypedValueFromArray($needle, array $array, $trim = false, $forceString = false) {
-        return is_array($array) && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString) : null;
+    public function getTypedValueFromArray($needle, array $array, $trim = false, $forceString = false, $sanitizeHtml = false)
+    {
+        return is_array($array) && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml) : null;
+    }
+
+    /**
+     * <p>Returns value from a needle POST, sanitized and with effective primitive strict type</p>
+     * @param string $needle <p>Value to check.</p>
+     * @param bool $trim <p>Trim value if type is an String</p>
+     * @param bool $forceString  <p>Force string parsing for values like "1"</p>
+     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     */
+    public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    {
+        $inputPost = filter_input(INPUT_POST, $needle, FILTER_NULL_ON_FAILURE);
+        return $this->getTypedValue($inputPost, $trim, $forceString, $sanitizeHtml);
+    }
+
+    /**
+     * <p>Returns value from a needle GET, sanitized and with effective primitive strict type</p>
+     * @param string $needle <p>Value to check.</p>
+     * @param bool $trim <p>Trim value if type is an String</p>
+     * @param bool $forceString  <p>Force string parsing for values like "1"</p>
+     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     */
+    public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    {
+        $inputGet = filter_input(INPUT_GET, $needle, FILTER_NULL_ON_FAILURE);
+        return $this->getTypedValue($inputGet, $trim, $forceString, $sanitizeHtml);
     }
 
     /**
@@ -72,9 +96,10 @@ final class EffectivePrimitiveTypeIdentifierService {
      * @param bool $value
      * @return bool
      */
-    private function getSanitizedBool($value) {
+    private function getSanitizedBool($value)
+    {
 
-        return (bool) filter_var($value, FILTER_VALIDATE_BOOL);
+        return filter_var($value, FILTER_VALIDATE_BOOL);
     }
 
     /**
@@ -83,12 +108,13 @@ final class EffectivePrimitiveTypeIdentifierService {
      *        must be "numeric"
      * @return int|float
      */
-    private function getSanitizedNumber($value) {
+    private function getSanitizedNumber($value)
+    {
         $numericvalue = $value + 0;
         if (is_int($numericvalue)) {
-            return $this->getSanitizedIntValue((int) $numericvalue);
+            return $this->getSanitizedIntValue($numericvalue);
         } else {
-            return $this->getSanitizedFloatValue((float) $numericvalue);
+            return $this->getSanitizedFloatValue($numericvalue);
         }
     }
 
@@ -97,43 +123,47 @@ final class EffectivePrimitiveTypeIdentifierService {
      * @param int $value
      * @return int
      */
-    private function getSanitizedIntValue($value) {
+    private function getSanitizedIntValue($value)
+    {
         return (int) filter_var($value, FILTER_SANITIZE_NUMBER_INT);
     }
 
     /**
-     * Return sanitized string 
+     * Return sanitized string
      * @param float $value
      * @return float
      */
-    private function getSanitizedFloatValue($value) {
+    private function getSanitizedFloatValue($value)
+    {
         return (float) filter_var($value, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
     }
 
     /**
-     * Return sanitized string 
+     * Return sanitized string
      * @param string $value
      * @param bool $trim
      * @param bool $sanitizeHtml
      * @return string
      */
-    private function getSanitizedString($value, $trim = false, $sanitizeHtml = false) {
-        if ($sanitizeHtml) {
-            return $this->sanitizeHtml($value, $trim);
-        }
-        $result = (string) filter_var($value, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
+    private function getSanitizedString($value, $trim = false, $sanitizeHtml = false)
+    {
+        $result = $sanitizeHtml ? $this->sanitizeHtml($value) : filter_var($value, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
         return $trim ? trim($result) : $result;
     }
 
     /**
-     * 
+     *
      * @param string $string
-     * @param bool $trim
      * @return string
      */
-    private function sanitizeHtml($string, $trim = false) {
-        $stringTrimmed = $trim ? trim($string) : $string;
-        $stringFiltered = (string) filter_var($stringTrimmed, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
+    private function sanitizeHtml($string)
+    {
+
+        $stringFiltered = (string) filter_var(
+            $string,
+            FILTER_UNSAFE_RAW,
+            FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
+        );
         $stringStripped = strip_tags($stringFiltered);
         $pattern = [
             '/\&/',
