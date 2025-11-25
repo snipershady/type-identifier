@@ -8,8 +8,9 @@ It helps normalize values coming from associative arrays, superglobal arrays, or
 [![Latest
 Version](https://img.shields.io/packagist/v/snipershady/type-identifier.svg)](https://packagist.org/packages/snipershady/type-identifier)\
 [![PHP
-Versions](https://img.shields.io/badge/PHP-5.6%2B%20%7C%208.1%2B-blue)](#)\
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+Versions](https://img.shields.io/badge/PHP-5.6%2B%20%7C%208.5%2B-blue)](#)\
+[![License: GPL v2](https://img.shields.io/badge/License-GPLv2-blue.svg)](./LICENSE)
+
 
 ## Features
 
@@ -155,7 +156,7 @@ $result = $ept->getTypedValueFromGet("invalid_offset"); // null
 
 ## License
 
-This project is released under the **MIT License**.\
+This project is released under the **GPLv2**.\
 See the [LICENSE](LICENSE) file for details.
 
 ## Contributing
