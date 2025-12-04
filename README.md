@@ -16,7 +16,7 @@ It helps normalize values coming from associative arrays, superglobal arrays, or
 -   ✔ Automatically detects: **int**, **float**, **bool**, **string**, **null**\
 -   ✔ Optional whitespace trimming\
 -   ✔ Type forcing (e.g., force string)\
--   ✔ Safe extraction from arrays and superglobals (`$_GET`, `$_POST`)\
+-   ✔ Safe extraction from arrays and superglobals (`$_GET`, `$_POST`,  `$_SERVER`)\
 -   ✔ Consistent behavior across PHP versions\
 -   ✔ Works even on legacy PHP 5.6 projects
 
