@@ -5,11 +5,10 @@ It helps normalize values coming from associative arrays, superglobal arrays, or
 
 ## Badges
 
-[![Latest
-Version](https://img.shields.io/packagist/v/snipershady/typegidentifier.svg)](https://packagist.org/packages/snipershady/typeidentifier)\
-[![PHP
-Versions](https://img.shields.io/badge/PHP-5.6%2B%20%7C%208.5%2B-blue)](#)\
+[![Latest Version](https://img.shields.io/packagist/v/snipershady/typeidentifier.svg)](https://packagist.org/packages/snipershady/typeidentifier)
+[![PHP Version](https://img.shields.io/packagist/php-v/snipershady/typeidentifier.svg)](https://www.php.net/)
 [![License: GPL v2](https://img.shields.io/badge/License-GPLv2-blue.svg)](./LICENSE)
+
 
 
 ## Features
