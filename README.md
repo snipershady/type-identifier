@@ -6,7 +6,7 @@ It helps normalize values coming from associative arrays, superglobal arrays, or
 ## Badges
 
 [![Latest
-Version](https://img.shields.io/packagist/v/snipershady/typeidentifier.svg)](https://packagist.org/packages/snipershady/typeidentifier)\
+Version](https://img.shields.io/packagist/v/snipershady/typegidentifier.svg)](https://packagist.org/packages/snipershady/typeidentifier)\
 [![PHP
 Versions](https://img.shields.io/badge/PHP-5.6%2B%20%7C%208.5%2B-blue)](#)\
 [![License: GPL v2](https://img.shields.io/badge/License-GPLv2-blue.svg)](./LICENSE)

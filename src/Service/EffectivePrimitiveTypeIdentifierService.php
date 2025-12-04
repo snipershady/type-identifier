@@ -56,12 +56,12 @@ final class EffectivePrimitiveTypeIdentifierService
     /**
      * <p>Returns value from a needle of an array, sanitized and with effective primitive strict type</p>
      * @param string $needle <p>Value to check.</p>
-     * @param array<mixed> $array <p>An array with keys to check.</p>
+     * @param array<mixed>|null $array <p>An array with keys to check. If $array is null, returns null</p>
      * @param bool $trim <p>Trim value if type is an String</p>
      * @param bool $forceString  <p>Force string parsing for values like "1"</p>
      * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
      */
-    public function getTypedValueFromArray($needle, array $array, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValueFromArray($needle, $array, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         return is_array($array) && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml) : null;
     }
@@ -76,6 +76,19 @@ final class EffectivePrimitiveTypeIdentifierService
     public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         $inputPost = filter_input(INPUT_POST, $needle, FILTER_NULL_ON_FAILURE);
+        return $this->getTypedValue($inputPost, $trim, $forceString, $sanitizeHtml);
+    }
+
+    /**
+    * <p>Returns value from a needle POST, sanitized and with effective primitive strict type</p>
+    * @param string $needle <p>Value to check.</p>
+    * @param bool $trim <p>Trim value if type is an String</p>
+    * @param bool $forceString  <p>Force string parsing for values like "1"</p>
+    * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+    */
+    public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    {
+        $inputPost = filter_input(INPUT_SERVER, $needle, FILTER_NULL_ON_FAILURE);
         return $this->getTypedValue($inputPost, $trim, $forceString, $sanitizeHtml);
     }
 
