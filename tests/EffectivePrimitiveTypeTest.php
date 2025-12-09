@@ -31,6 +31,7 @@ use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
  */
 class EffectivePrimitiveTypeTest extends AbstractTestCase
 {
+
     public function testPositiveInt(): void
     {
         $value = 1;
@@ -388,5 +389,24 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $this->assertTrue($value !== $result);
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
+    }
+
+    public function testArray(): void
+    {
+        $value = [
+            'key1' => [
+                'key1.1' => "1"
+                ,'key2.1' => "1"
+            ]
+        ];
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($value['key1'], true);
+        //test is array
+        $this->assertIsArray($result);
+        //test expected result
+        $expected = $value['key1'];
+        $this->assertEquals($result, $expected);
+        //test type
+        $this->assertIsInt($result['key1.1']);
     }
 }
