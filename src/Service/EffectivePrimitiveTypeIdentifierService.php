@@ -35,7 +35,7 @@ final class EffectivePrimitiveTypeIdentifierService
      * @param bool  $forceString  <p>Force string parsing for values like "1", so it will be handlet as String and not as integer</p>
      * @param bool  $sanitizeHtml <p>When true, the string will be sanitized from HTML tags</p>
      *
-     * @return bool|int|float|string|null
+     * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null
      */
     public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -68,10 +68,11 @@ final class EffectivePrimitiveTypeIdentifierService
     /**
      * <p>Returns value from a needle of an array, sanitized and with effective primitive strict type</p>.
      *
-     * @param string            $needle      <p>Value to check.</p>
-     * @param array<mixed>|null $array       <p>An array with keys to check. If $array is null, returns null</p>
-     * @param bool              $trim        <p>Trim value if type is an String</p>
-     * @param bool              $forceString <p>Force string parsing for values like "1"</p>
+     * @param string            $needle       <p>Value to check.</p>
+     * @param array<mixed>|null $array        <p>An array with keys to check. If $array is null, returns null</p>
+     * @param bool              $trim         <p>Trim value if type is an String</p>
+     * @param bool              $forceString  <p>Force string parsing for values like "1"</p>
+     * @param bool              $sanitizeHtml <p>Sanitize html tags</p>
      *
      * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
      */
@@ -83,9 +84,10 @@ final class EffectivePrimitiveTypeIdentifierService
     /**
      * <p>Returns value from a needle POST, sanitized and with effective primitive strict type</p>.
      *
-     * @param string $needle      <p>Value to check.</p>
-     * @param bool   $trim        <p>Trim value if type is an String</p>
-     * @param bool   $forceString <p>Force string parsing for values like "1"</p>
+     * @param string $needle       <p>Value to check.</p>
+     * @param bool   $trim         <p>Trim value if type is an String</p>
+     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
+     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
      *
      * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
      */
@@ -99,9 +101,10 @@ final class EffectivePrimitiveTypeIdentifierService
     /**
      * <p>Returns value from a needle POST, sanitized and with effective primitive strict type</p>.
      *
-     * @param string $needle      <p>Value to check.</p>
-     * @param bool   $trim        <p>Trim value if type is an String</p>
-     * @param bool   $forceString <p>Force string parsing for values like "1"</p>
+     * @param string $needle       <p>Value to check.</p>
+     * @param bool   $trim         <p>Trim value if type is an String</p>
+     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
+     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
      *
      * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
      */
@@ -115,9 +118,10 @@ final class EffectivePrimitiveTypeIdentifierService
     /**
      * <p>Returns value from a needle GET, sanitized and with effective primitive strict type</p>.
      *
-     * @param string $needle      <p>Value to check.</p>
-     * @param bool   $trim        <p>Trim value if type is an String</p>
-     * @param bool   $forceString <p>Force string parsing for values like "1"</p>
+     * @param string $needle       <p>Value to check.</p>
+     * @param bool   $trim         <p>Trim value if type is an String</p>
+     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
+     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
      *
      * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
      */

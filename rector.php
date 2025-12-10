@@ -20,7 +20,7 @@ return RectorConfig::configure()
                 ])
                 ->withSkip([
                     // InlineClassRoutePrefixRector::class,
-                    NewMethodCallWithoutParenthesesRector::class,
+                    // NewMethodCallWithoutParenthesesRector::class,
                     // UnusedForeachValueToArrayKeysRector::class,
                     // RemoveUnusedForeachKeyRector::class,
                     // RemoveUselessParamTagRector::class,
