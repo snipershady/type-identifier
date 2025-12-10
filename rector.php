@@ -15,45 +15,45 @@ use Rector\ValueObject\PhpVersion;
 
 return RectorConfig::configure()
                 ->withPaths([
-                    __DIR__ . '/src',
-                    __DIR__ . '/tests'
+                    __DIR__.'/src',
+                    __DIR__.'/tests',
                 ])
                 ->withSkip([
-                    //InlineClassRoutePrefixRector::class,
+                    // InlineClassRoutePrefixRector::class,
                     NewMethodCallWithoutParenthesesRector::class,
-                        //UnusedForeachValueToArrayKeysRector::class,
-                        //RemoveUnusedForeachKeyRector::class,
-                        //RemoveUselessParamTagRector::class,
-                        //RemoveUselessReturnTagRector::class
-                        //SimplifyUselessVariableRector::class
+                    // UnusedForeachValueToArrayKeysRector::class,
+                    // RemoveUnusedForeachKeyRector::class,
+                    // RemoveUselessParamTagRector::class,
+                    // RemoveUselessReturnTagRector::class
+                    // SimplifyUselessVariableRector::class
                 ])
                 ->withPreparedSets(
-                //deadCode: true,
-                //codeQuality: true,
-                //codingStyle: true,
-                //naming: true,
-                //privatization: true,
-                //typeDeclarations: true,
-                //rectorPreset: true
+                    // deadCode: true,
+                    // codeQuality: true,
+                    // codingStyle: true,
+                    // naming: true,
+                    // privatization: true,
+                    // typeDeclarations: true,
+                    // rectorPreset: true
                 )
                 ->withPhpSets(php56: true)
                 ->withPhpVersion(PhpVersion::PHP_56)
                 ->withAttributesSets(symfony: true, doctrine: true)
                 ->withComposerBased(twig: true, doctrine: true, phpunit: true, symfony: true)
                 ->withSets(
-                        [
-                            LevelSetList::UP_TO_PHP_56
-                        ]
+                    [
+                        LevelSetList::UP_TO_PHP_56,
+                    ]
                 )
                 ->withRules(
-                        [
-                        //ExplicitNullableParamTypeRector::class,
-                        //AddOverrideAttributeToOverriddenMethodsRector::class,
-                        //ReturnTypeFromStrictNativeCallRector::class
-                        ]
+                    [
+                        // ExplicitNullableParamTypeRector::class,
+                        // AddOverrideAttributeToOverriddenMethodsRector::class,
+                        // ReturnTypeFromStrictNativeCallRector::class
+                    ]
                 )
                 ->withTypeCoverageLevel(50)
                 ->withDeadCodeLevel(50)
                 ->withCodeQualityLevel(50)
-                //->withCodingStyleLevel(24) // use php-csfix instead
+                // ->withCodingStyleLevel(24) // use php-csfix instead
 ;
