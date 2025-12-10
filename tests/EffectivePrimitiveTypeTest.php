@@ -408,4 +408,26 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         // test type
         $this->assertIsInt($result['key1.1']);
     }
+
+    public function testMultidimensionalArray(): void
+    {
+        $value = [
+            [
+                'id' => 1,
+                'nome' => 'Stefano',
+            ],
+        ];
+
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValueFromArray('0', $value);
+        // test is array
+        $this->assertIsArray($result);
+
+        // test expected result
+        $resultArrayId = $ept->getTypedValueFromArray('id', $result);
+        $resultArrayNome = $ept->getTypedValueFromArray('nome', $result);
+
+        $this->assertEquals(1, $resultArrayId);
+        $this->assertEquals('Stefano', $resultArrayNome);
+    }
 }
