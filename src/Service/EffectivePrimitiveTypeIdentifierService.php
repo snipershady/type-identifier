@@ -40,11 +40,11 @@ final class EffectivePrimitiveTypeIdentifierService
         if ($data === null) {
             return null;
         }
-        
-        if(is_array($data)){
+
+        if (is_array($data)) {
             $res = [];
-            foreach($data as $key => $value){
-                $res[$key] = $this->getTypedValue($value,$trim,$forceString,$sanitizeHtml);
+            foreach ($data as $key => $value) {
+                $res[$key] = $this->getTypedValue($value, $trim, $forceString, $sanitizeHtml);
             }
             return $res;
         }

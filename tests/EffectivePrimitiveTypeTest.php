@@ -31,7 +31,6 @@ use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
  */
 class EffectivePrimitiveTypeTest extends AbstractTestCase
 {
-
     public function testPositiveInt(): void
     {
         $value = 1;
