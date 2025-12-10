@@ -27,6 +27,7 @@ namespace TypeIdentifier\Service;
  */
 final class EffectivePrimitiveTypeIdentifierService
 {
+
     /**
      * <p>Returns strict effective primitive type of a variable</p>.
      *
@@ -93,9 +94,7 @@ final class EffectivePrimitiveTypeIdentifierService
      */
     public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $inputPost = filter_input(INPUT_POST, $needle, FILTER_NULL_ON_FAILURE);
-
-        return $this->getTypedValue($inputPost, $trim, $forceString, $sanitizeHtml);
+        return array_key_exists($needle, $_POST) ? $this->getTypedValue(filter_var($_POST[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
@@ -110,9 +109,7 @@ final class EffectivePrimitiveTypeIdentifierService
      */
     public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $inputPost = filter_input(INPUT_SERVER, $needle, FILTER_NULL_ON_FAILURE);
-
-        return $this->getTypedValue($inputPost, $trim, $forceString, $sanitizeHtml);
+        return array_key_exists($needle, $_SERVER) ? $this->getTypedValue(filter_var($_SERVER[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
@@ -127,9 +124,7 @@ final class EffectivePrimitiveTypeIdentifierService
      */
     public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $inputGet = filter_input(INPUT_GET, $needle, FILTER_NULL_ON_FAILURE);
-
-        return $this->getTypedValue($inputGet, $trim, $forceString, $sanitizeHtml);
+        return array_key_exists($needle, $_GET) ? $this->getTypedValue(filter_var($_GET[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
@@ -210,10 +205,10 @@ final class EffectivePrimitiveTypeIdentifierService
     private function sanitizeHtml($string)
     {
         $stringFiltered = (string) filter_var(
-            $string,
-            FILTER_UNSAFE_RAW,
-            FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
-        );
+                        $string,
+                        FILTER_UNSAFE_RAW,
+                        FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
+                );
         $stringStripped = strip_tags($stringFiltered);
         $stringDecoded = html_entity_decode($stringStripped);
         $pattern = [
