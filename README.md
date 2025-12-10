@@ -1,164 +1,323 @@
 # type-identifier
-Effective primitive type identifier.
-A lightweight library for identifying and sanitizing primitive data types.
-It helps normalize values coming from associative arrays, superglobal arrays, or HTTP requests.
+
+A lightweight, robust PHP library for identifying and sanitizing primitive data types in real-world scenarios.
+
+Perfect for normalizing values from associative arrays, superglobal arrays, HTTP requests, and any untyped data sources.
 
 ## Badges
 
 [![Latest Version](https://img.shields.io/packagist/v/snipershady/typeidentifier.svg)](https://packagist.org/packages/snipershady/typeidentifier)
 [![PHP Version](https://img.shields.io/packagist/php-v/snipershady/typeidentifier.svg)](https://www.php.net/)
 [![License: GPL v2](https://img.shields.io/badge/License-GPLv2-blue.svg)](./LICENSE)
+[![Stars](https://img.shields.io/github/stars/snipershady/type-identifier)](https://github.com/snipershady/type-identifier/stargazers)
+[![Issues](https://img.shields.io/github/issues/snipershady/type-identifier)](https://github.com/snipershady/type-identifier/issues)
 
+## Why type-identifier?
 
+When working with HTTP requests, legacy codebases, or loosely-typed data sources, you often receive everything as strings. This library intelligently detects the actual primitive type and returns properly typed values, eliminating the need for repetitive manual casting and validation.
 
 ## Features
 
--   ✔ Automatically detects: **int**, **float**, **bool**, **string**, **null**\
--   ✔ Optional whitespace trimming\
--   ✔ Type forcing (e.g., force string)\
--   ✔ Safe extraction from arrays and superglobals (`$_GET`, `$_POST`,  `$_SERVER`)\
--   ✔ Consistent behavior across PHP versions\
--   ✔ Works even on legacy PHP 5.6 projects
+- ✅ **Smart type detection**: Automatically identifies `int`, `float`, `bool`, `string`, and `null`
+- ✅ **Whitespace handling**: Optional trimming for clean string values
+- ✅ **Type forcing**: Force values to remain as strings when needed
+- ✅ **Array-safe extraction**: Safely retrieve typed values from arrays without `isset()` checks
+- ✅ **Superglobal helpers**: Built-in methods for `$_GET`, `$_POST`, `$_SERVER`
+- ✅ **Consistent behavior**: Works reliably across all PHP versions
+- ✅ **Legacy support**: Compatible with PHP 5.6+ through PHP 8.5+
+- ✅ **Zero dependencies**: Lightweight and focused
 
 ## Installation
 
-``` bash
+```bash
 composer require snipershady/type-identifier
 ```
 
 ## Requirements
 
-This library supports:
+- **PHP 5.6+** (fully compatible with PHP 8.5+)
 
--   **PHP 5.6+**
--   Fully compatible with **PHP 8.5+**, and the documentation is PHP 8
-    oriented.
+While this library is particularly valuable for legacy PHP 5.6 projects lacking modern type systems, it remains useful in modern PHP applications for safely handling HTTP request values and heterogeneous data structures.
 
-Although PHP 5.6 benefits greatly from this type of utility, the library
-is also useful in modern PHP projects to safely handle and sanitize HTTP
-request values or heterogeneous associative arrays.
+## Quick Start
 
-## Usage Examples
-
-### Import the service
 ```php
 use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
+
+$ept = new EffectivePrimitiveTypeIdentifierService();
+
+// String "1" becomes int 1
+$result = $ept->getTypedValue("1"); // int(1)
+
+// String "1.5" becomes float 1.5
+$result = $ept->getTypedValue("1.5"); // float(1.5)
+
+// Non-numeric string stays string
+$result = $ept->getTypedValue("hello"); // string("hello")
+
+// Automatic whitespace trimming
+$result = $ept->getTypedValue("  hello  ", true); // string("hello")
 ```
+
 ## Usage Examples
 
-### Import the service
+### Basic Type Identification
 
-``` php
-use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
-```
-
-### Basic type identification
-
-``` php
+```php
 $ept = new EffectivePrimitiveTypeIdentifierService();
 
-// Result: 1 (int)
-$result = $ept->getTypedValue(1);
-```
-
-``` php
-$ept = new EffectivePrimitiveTypeIdentifierService();
-
-// Result: 1 (int)
+// Integer detection
 $result = $ept->getTypedValue("1");
-```
+// Result: 1 (int)
 
-``` php
-$array["value"] = "1.1";
-
+// Float detection
+$result = $ept->getTypedValue("1.1");
 // Result: 1.1 (float)
-$result = $ept->getTypedValue($array["value"]);
-```
 
-``` php
-$array["value"] = "1.1a";
-
+// String preservation (non-numeric)
+$result = $ept->getTypedValue("1.1a");
 // Result: "1.1a" (string)
-$result = $ept->getTypedValue($array["value"]);
-```
 
-### Boolean evaluation
-
-``` php
-$ept = new EffectivePrimitiveTypeIdentifierService();
-
+// Boolean values
+$result = $ept->getTypedValue(true);
 // Result: true (bool)
-$result = $ept->getTypedValue(1 === 1);
+
+// Null handling
+$result = $ept->getTypedValue(null);
+// Result: null
 ```
 
-### Automatic trimming
+### String Trimming
 
-``` php
+```php
 $ept = new EffectivePrimitiveTypeIdentifierService();
 
+// Trim whitespace automatically
+$result = $ept->getTypedValue("  snipershady  ", true);
 // Result: "snipershady" (string)
-$result = $ept->getTypedValue("snipershady       ", true);
+
+// Preserves internal spaces
+$result = $ept->getTypedValue("  hello world  ", true);
+// Result: "hello world" (string)
 ```
 
-### Force string sanitization
+### Force String Type
 
-``` php
+```php
+$ept = new EffectivePrimitiveTypeIdentifierService();
+
 $trim = true;
 $forceString = true;
 
-$ept = new EffectivePrimitiveTypeIdentifierService();
+// Keep as string even if numeric
+$result = $ept->getTypedValue("123", $trim, $forceString);
+// Result: "123" (string, not int)
 
-// Result: "1" (string)
-$result = $ept->getTypedValue("1", $trim, $forceString);
+// Useful for IDs, codes, or values that should stay strings
+$result = $ept->getTypedValue("007", $trim, $forceString);
+// Result: "007" (string)
 ```
 
-## Array Sanitizing
+## Working with Arrays
 
-### Valid key
+### Safe Array Value Extraction
 
-``` php
-$array["value"] = "snipershady";
+```php
 $ept = new EffectivePrimitiveTypeIdentifierService();
 
-// Result: "snipershady" (string)
-$result = $ept->getTypedValueFromArray("value", $array);
-```
+$data = [
+    "user_id" => "42",
+    "username" => "  snipershady  ",
+    "price" => "19.99"
+];
 
-### Invalid key → returns `null`
+// Valid key - returns typed value
+$userId = $ept->getTypedValueFromArray("user_id", $data);
+// Result: 42 (int)
 
-``` php
-$ept = new EffectivePrimitiveTypeIdentifierService();
-
+// Non-existent key - returns null (no warnings/errors)
+$missing = $ept->getTypedValueFromArray("invalid_key", $data);
 // Result: null
-$result = $ept->getTypedValueFromArray("invalid_offset", $array);
+
+// With trimming enabled
+$username = $ept->getTypedValueFromArray("username", $data, true);
+// Result: "snipershady" (string, trimmed)
+
+// Float detection
+$price = $ept->getTypedValueFromArray("price", $data);
+// Result: 19.99 (float)
 ```
 
-## GET/POST Request Sanitizing
+## HTTP Request Sanitization
 
-### From `$_POST`
+### POST Data
 
-``` php
+```php
 $ept = new EffectivePrimitiveTypeIdentifierService();
 
-$result = $ept->getTypedValueFromPost("user_id"); // typed value or null
-$result = $ept->getTypedValueFromPost("invalid_offset"); // null
+// Assuming $_POST = ["user_id" => "123", "active" => "1"]
+
+// Retrieve and type-cast POST values
+$userId = $ept->getTypedValueFromPost("user_id");
+// Result: 123 (int)
+
+// Non-existent keys return null
+$missing = $ept->getTypedValueFromPost("nonexistent");
+// Result: null
+
+// With trimming
+$name = $ept->getTypedValueFromPost("username", true);
+// Automatically trims whitespace
 ```
 
-### From `$_GET`
+### GET Data
 
-``` php
+```php
 $ept = new EffectivePrimitiveTypeIdentifierService();
 
-$result = $ept->getTypedValueFromGet("user_id"); // typed value or null
-$result = $ept->getTypedValueFromGet("invalid_offset"); // null
+// Assuming $_GET = ["page" => "2", "sort" => "name"]
+
+// Retrieve and type-cast GET values
+$page = $ept->getTypedValueFromGet("page");
+// Result: 2 (int)
+
+$sort = $ept->getTypedValueFromGet("sort");
+// Result: "name" (string)
+
+// Missing parameter
+$filter = $ept->getTypedValueFromGet("filter");
+// Result: null
+```
+
+## Real-World Use Cases
+
+### Form Processing
+
+```php
+$ept = new EffectivePrimitiveTypeIdentifierService();
+
+// Process form submission with automatic type detection
+$age = $ept->getTypedValueFromPost("age"); // int or null
+$name = $ept->getTypedValueFromPost("name", true); // trimmed string
+$price = $ept->getTypedValueFromPost("price"); // float or null
+$agreed = $ept->getTypedValueFromPost("terms"); // bool or null
+
+if ($age !== null && $age >= 18) {
+    // Safe integer comparison without manual casting
+}
+```
+
+### API Parameter Handling
+
+```php
+$ept = new EffectivePrimitiveTypeIdentifierService();
+
+// Clean API query parameters
+$limit = $ept->getTypedValueFromGet("limit") ?? 10;
+$offset = $ept->getTypedValueFromGet("offset") ?? 0;
+$search = $ept->getTypedValueFromGet("q", true) ?? "";
+
+// All values are properly typed for database queries
+```
+
+### Configuration Arrays
+
+```php
+$ept = new EffectivePrimitiveTypeIdentifierService();
+
+$config = [
+    "max_attempts" => "3",
+    "timeout" => "30.5",
+    "enabled" => "true",
+    "api_key" => "  abc123xyz  "
+];
+
+$maxAttempts = $ept->getTypedValueFromArray("max_attempts", $config); // int(3)
+$timeout = $ept->getTypedValueFromArray("timeout", $config); // float(30.5)
+$apiKey = $ept->getTypedValueFromArray("api_key", $config, true); // string("abc123xyz")
+```
+
+## API Reference
+
+### Main Methods
+
+#### `getTypedValue($value, $trim = false, $forceString = false)`
+
+Identifies and returns the primitive type of a given value.
+
+- **Parameters:**
+  - `$value` (mixed): The value to type-check
+  - `$trim` (bool): Whether to trim string values (default: false)
+  - `$forceString` (bool): Force return as string type (default: false)
+- **Returns:** Typed primitive value or null
+
+#### `getTypedValueFromArray($key, array $array, $trim = false, $forceString = false)`
+
+Safely extracts and types a value from an array.
+
+- **Parameters:**
+  - `$key` (string): Array key to retrieve
+  - `$array` (array): Source array
+  - `$trim` (bool): Whether to trim string values (default: false)
+  - `$forceString` (bool): Force return as string type (default: false)
+- **Returns:** Typed value or null if key doesn't exist
+
+#### `getTypedValueFromPost($key, $trim = false, $forceString = false)`
+
+Retrieves and types a value from `$_POST`.
+
+- **Parameters:**
+  - `$key` (string): POST parameter name
+  - `$trim` (bool): Whether to trim string values (default: false)
+  - `$forceString` (bool): Force return as string type (default: false)
+- **Returns:** Typed value or null
+
+#### `getTypedValueFromGet($key, $trim = false, $forceString = false)`
+
+Retrieves and types a value from `$_GET`.
+
+- **Parameters:**
+  - `$key` (string): GET parameter name
+  - `$trim` (bool): Whether to trim string values (default: false)
+  - `$forceString` (bool): Force return as string type (default: false)
+- **Returns:** Typed value or null
+
+## Testing
+
+```bash
+composer test
 ```
 
 ## License
 
-This project is released under the **GPLv2**.\
-See the [LICENSE](LICENSE) file for details.
+This project is released under **GPLv2**. See the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
-Contributions are welcome!\
-Feel free to open an issue or submit a pull request.
+Contributions are welcome! To contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows PSR-12 coding standards and includes appropriate tests.
+
+## Author
+
+Created and maintained by [snipershady](https://github.com/snipershady)
+
+Best contributor [DamImpr](https://github.com/DamImpr)
+
+## Support
+
+If you find this library helpful, please consider:
+- ⭐ Starring the repository
+- 🐛 Reporting issues
+- 📖 Improving documentation
+- 🔧 Contributing code
+
+---
+
+**Made with ❤️ for the PHP community**
