@@ -285,9 +285,9 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValueFromArray('value', $array);
+        $this->assertIsString($result);
         $this->assertTrue($array['value'] === $result);
         $this->assertEquals($array['value'], $result);
-        $this->assertIsString($result);
     }
 
     public function testAssociativeArraySantizieWitTrimMethod(): void
