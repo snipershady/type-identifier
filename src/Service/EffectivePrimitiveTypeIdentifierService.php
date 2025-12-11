@@ -27,7 +27,6 @@ namespace TypeIdentifier\Service;
  */
 final class EffectivePrimitiveTypeIdentifierService
 {
-
     /**
      * <p>Returns strict effective primitive type of a variable</p>.
      *
@@ -205,10 +204,10 @@ final class EffectivePrimitiveTypeIdentifierService
     private function sanitizeHtml($string)
     {
         $stringFiltered = (string) filter_var(
-                        $string,
-                        FILTER_UNSAFE_RAW,
-                        FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
-                );
+            $string,
+            FILTER_UNSAFE_RAW,
+            FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
+        );
         $stringStripped = strip_tags($stringFiltered);
         $stringDecoded = html_entity_decode($stringStripped);
         $pattern = [
