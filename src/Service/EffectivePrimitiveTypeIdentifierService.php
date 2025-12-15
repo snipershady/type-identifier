@@ -93,6 +93,12 @@ final class EffectivePrimitiveTypeIdentifierService
      */
     public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
+        $resultSAPI = filter_input(INPUT_POST, $needle, FILTER_UNSAFE_RAW);
+
+        if (null !== $resultSAPI) {
+            return $resultSAPI;
+        }
+
         return array_key_exists($needle, $_POST) ? $this->getTypedValue(filter_var($_POST[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
     }
 
@@ -108,6 +114,12 @@ final class EffectivePrimitiveTypeIdentifierService
      */
     public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
+        $resultSAPI = filter_input(INPUT_SERVER, $needle, FILTER_UNSAFE_RAW);
+
+        if (null !== $resultSAPI) {
+            return $resultSAPI;
+        }
+
         return array_key_exists($needle, $_SERVER) ? $this->getTypedValue(filter_var($_SERVER[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
     }
 
@@ -123,6 +135,12 @@ final class EffectivePrimitiveTypeIdentifierService
      */
     public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
+        $resultSAPI = filter_input(INPUT_GET, $needle, FILTER_UNSAFE_RAW);
+
+        if (null !== $resultSAPI) {
+            return $resultSAPI;
+        }
+
         return array_key_exists($needle, $_GET) ? $this->getTypedValue(filter_var($_GET[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
     }
 
