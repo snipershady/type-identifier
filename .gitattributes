@@ -3,3 +3,7 @@
 /.php-cs-fixer.dist.php export-ignore
 /README.md export-ignore
 /phpstan.dist.neon export-ignore
+/.gitattributes
+/.github/
+/.github/
+/.php-cs-fixer.cache
