@@ -4,6 +4,6 @@
 /README.md export-ignore
 /phpstan.dist.neon export-ignore
 /.gitattributes export-ignore
-/.github/ export-ignore
+/.gitignore export-ignore
 /.github/ export-ignore
 /.php-cs-fixer.cache export-ignore
