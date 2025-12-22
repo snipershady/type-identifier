@@ -1,0 +1,28 @@
+services:
+  do-tests:
+    build: 
+        context: .
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./vendor:/app/vendor
+      - ./composer.json:/app/composer.json
+      - ./composer.lock:/app/composer.lock
+    networks:
+      - typeidentifier-network
+    depends_on:
+      endpoint-test:
+        condition: service_started
+  endpoint-test:
+    image: php:8.4-apache
+    volumes:
+      - ./src:/var/www/html/src
+      - ./tests:/var/www/html/tests
+      - ./vendor:/var/www/html/vendor
+      - ./composer.json:/var/www/html/composer.json
+      - ./composer.lock:/var/www/html/composer.lock
+    networks:
+      - typeidentifier-network
+        
+networks:
+   typeidentifier-network:

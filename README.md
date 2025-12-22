@@ -284,8 +284,15 @@ Retrieves and types a value from `$_GET`.
 
 ## Testing
 
+If you have a development environment set up with PHP 8.4, set the host file ‘endpoint-test’ to point to 127.0.0.1 and run
+
 ```bash
 composer test
+```
+Otherwise, use the docker found in the project that sets up the environment and runs the test suite, executing  
+
+```bash
+docker compose run --rm --remove-orphans --build do-tests && docker compose down
 ```
 
 ## License
