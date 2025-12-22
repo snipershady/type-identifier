@@ -54,7 +54,7 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
     {
         $httpMethod = strtoupper($httpMethodString);
         $ch = curl_init();
-        $url = 'http://127.0.0.1/tests/entrypoint.php';
+        $url = 'http://endpoint-test/tests/entrypoint.php';
 
         $options = [
             CURLOPT_RETURNTRANSFER => true,

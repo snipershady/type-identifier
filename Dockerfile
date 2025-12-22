@@ -1,8 +1,8 @@
-FROM php:8.4-apache
+FROM php:8.4-cli
 
 RUN apt-get update && apt-get install zip unzip -y
 
-
+WORKDIR /app
 COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 COPY ./src ./src
 COPY ./tests ./tests
@@ -18,6 +18,3 @@ COPY ./entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["entrypoint.sh"]
-
-
-CMD apache2-foreground

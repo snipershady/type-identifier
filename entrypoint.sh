@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 composer install
 
 php vendor/bin/phpunit tests/EffectivePrimitiveTypeTest.php
