@@ -96,7 +96,7 @@ final class EffectivePrimitiveTypeIdentifierService
         $resultSAPI = filter_input(INPUT_POST, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI);
+            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
         return array_key_exists($needle, $_POST) ? $this->getTypedValue(filter_var($_POST[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
@@ -117,7 +117,7 @@ final class EffectivePrimitiveTypeIdentifierService
         $resultSAPI = filter_input(INPUT_SERVER, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI);
+            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
         return array_key_exists($needle, $_SERVER) ? $this->getTypedValue(filter_var($_SERVER[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
@@ -138,10 +138,52 @@ final class EffectivePrimitiveTypeIdentifierService
         $resultSAPI = filter_input(INPUT_GET, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI);
+            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
         return array_key_exists($needle, $_GET) ? $this->getTypedValue(filter_var($_GET[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
+    }
+
+    /**
+     * <p>Returns value from a needle COOKIE, sanitized and with effective primitive strict type</p>.
+     *
+     * @param string $needle       <p>Value to check.</p>
+     * @param bool   $trim         <p>Trim value if type is an String</p>
+     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
+     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
+     *
+     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     */
+    public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    {
+        $resultSAPI = filter_input(INPUT_COOKIE, $needle, FILTER_UNSAFE_RAW);
+
+        if (null !== $resultSAPI) {
+            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
+        }
+
+        return array_key_exists($needle, $_COOKIE) ? $this->getTypedValue(filter_var($_COOKIE[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
+    }
+
+    /**
+     * <p>Returns value from a needle ENV, sanitized and with effective primitive strict type</p>.
+     *
+     * @param string $needle       <p>Value to check.</p>
+     * @param bool   $trim         <p>Trim value if type is an String</p>
+     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
+     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
+     *
+     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     */
+    public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    {
+        $resultSAPI = filter_input(INPUT_ENV, $needle, FILTER_UNSAFE_RAW);
+
+        if (null !== $resultSAPI) {
+            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
+        }
+
+        return array_key_exists($needle, $_ENV) ? $this->getTypedValue(filter_var($_ENV[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
