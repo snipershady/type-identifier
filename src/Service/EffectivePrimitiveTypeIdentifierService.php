@@ -96,7 +96,7 @@ final class EffectivePrimitiveTypeIdentifierService
         $resultSAPI = filter_input(INPUT_POST, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
-            return $resultSAPI;
+            return $this->getTypedValue($resultSAPI);
         }
 
         return array_key_exists($needle, $_POST) ? $this->getTypedValue(filter_var($_POST[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
@@ -117,7 +117,7 @@ final class EffectivePrimitiveTypeIdentifierService
         $resultSAPI = filter_input(INPUT_SERVER, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
-            return $resultSAPI;
+            return $this->getTypedValue($resultSAPI);
         }
 
         return array_key_exists($needle, $_SERVER) ? $this->getTypedValue(filter_var($_SERVER[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
@@ -138,7 +138,7 @@ final class EffectivePrimitiveTypeIdentifierService
         $resultSAPI = filter_input(INPUT_GET, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
-            return $resultSAPI;
+            return $this->getTypedValue($resultSAPI);
         }
 
         return array_key_exists($needle, $_GET) ? $this->getTypedValue(filter_var($_GET[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
@@ -169,9 +169,9 @@ final class EffectivePrimitiveTypeIdentifierService
         $numericvalue = $value + 0;
         if (is_int($numericvalue)) {
             return $this->getSanitizedIntValue($numericvalue);
-        } else {
-            return $this->getSanitizedFloatValue($numericvalue);
         }
+
+        return $this->getSanitizedFloatValue($numericvalue);
     }
 
     /**

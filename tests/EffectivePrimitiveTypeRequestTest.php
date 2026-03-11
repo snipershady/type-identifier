@@ -74,6 +74,6 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
         curl_setopt_array($ch, $options);
         $response = curl_exec($ch);
 
-        return json_decode($response,true);
+        return json_decode($response, true);
     }
 }
