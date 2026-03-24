@@ -2,7 +2,9 @@
 
 namespace TypeIdentifier\Tests;
 
+use TypeIdentifier\Sanitizer\HtmlSanitizerServiceInterface;
 use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
+use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierServiceInterface;
 
 /*
  * Copyright (C) 2025  Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
@@ -617,14 +619,14 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testGetTypedValueMixedTypeArray(): void
     {
         $input = [
-            'int'    => '42',
-            'float'  => '3.14',
+            'int' => '42',
+            'float' => '3.14',
             'string' => 'hello',
-            'null'   => null,
-            'bool'   => true,
+            'null' => null,
+            'bool' => true,
         ];
 
-        $ept    = new EffectivePrimitiveTypeIdentifierService();
+        $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($input);
 
         $this->assertIsArray($result);
@@ -646,12 +648,12 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testGetTypedValueMixedTypeArrayForceString(): void
     {
         $input = [
-            'int_string'   => '42',
+            'int_string' => '42',
             'float_string' => '3.14',
             'plain_string' => 'hello',
         ];
 
-        $ept    = new EffectivePrimitiveTypeIdentifierService();
+        $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($input, false, true);
 
         $this->assertIsString($result['int_string']);
@@ -671,7 +673,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testSanitizeHtmlOnCleanStringIsUnchanged(): void
     {
         $value = "C'era una volta, cappuccetto rosso.";
-        $ept   = new EffectivePrimitiveTypeIdentifierService();
+        $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value, false, false, true);
         $this->assertIsString($result);
         $this->assertSame($value, $result);
@@ -682,14 +684,14 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
      * fully neutralised by the corrected pipeline order:
      *  1. html_entity_decode() → &lt;script&gt; becomes <script>
      *  2. strip_tags()         → <script>...</script> is removed entirely
-     *  3. preg_replace()       → ( and ) are stripped from alert(1)
+     *  3. preg_replace()       → ( and ) are stripped from alert(1).
      *
      * Expected result: 'alert1' — inert plain text with no executable syntax.
      */
     public function testSanitizeHtmlDoubleEncodedXss(): void
     {
-        $value  = '&lt;script&gt;alert(1)&lt;/script&gt;';
-        $ept    = new EffectivePrimitiveTypeIdentifierService();
+        $value = '&lt;script&gt;alert(1)&lt;/script&gt;';
+        $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value, false, false, true);
         $this->assertIsString($result);
         $this->assertStringNotContainsString('<', $result);
@@ -706,9 +708,9 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
      */
     public function testSanitizeHtmlKeepsInnerText(): void
     {
-        $value    = '<strong>Hello</strong>';
-        $ept      = new EffectivePrimitiveTypeIdentifierService();
-        $result   = $ept->getTypedValue($value, true, false, true);
+        $value = '<strong>Hello</strong>';
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($value, true, false, true);
         $this->assertIsString($result);
         $this->assertSame('Hello', $result);
     }
@@ -718,10 +720,85 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
      */
     public function testSanitizeHtmlWithTrim(): void
     {
-        $value  = '  <b>word</b>  ';
-        $ept    = new EffectivePrimitiveTypeIdentifierService();
+        $value = '  <b>word</b>  ';
+        $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value, true, false, true);
         $this->assertIsString($result);
         $this->assertSame('word', $result);
+    }
+
+    // -------------------------------------------------------------------------
+    // Interface contract
+    // -------------------------------------------------------------------------
+
+    /**
+     * The service must implement EffectivePrimitiveTypeIdentifierServiceInterface.
+     */
+    public function testServiceImplementsInterface(): void
+    {
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $this->assertInstanceOf(EffectivePrimitiveTypeIdentifierServiceInterface::class, $ept);
+    }
+
+    // -------------------------------------------------------------------------
+    // Custom HtmlSanitizerServiceInterface injection
+    // -------------------------------------------------------------------------
+
+    /**
+     * A custom sanitizer injected via the constructor must be used when
+     * $sanitizeHtml is true, replacing the default HtmlSanitizerService.
+     */
+    public function testCustomSanitizerIsUsed(): void
+    {
+        $customSanitizer = new class implements HtmlSanitizerServiceInterface {
+            public function sanitize($string)
+            {
+                return 'SANITIZED';
+            }
+        };
+
+        $ept = new EffectivePrimitiveTypeIdentifierService($customSanitizer);
+        $result = $ept->getTypedValue('<b>anything</b>', false, false, true);
+        $this->assertSame('SANITIZED', $result);
+    }
+
+    /**
+     * When $sanitizeHtml is false the injected custom sanitizer must NOT be
+     * called and the raw string must be returned unchanged.
+     */
+    public function testCustomSanitizerNotCalledWhenSanitizeHtmlIsFalse(): void
+    {
+        $called = false;
+        $customSanitizer = new class($called) implements HtmlSanitizerServiceInterface {
+            private $called;
+
+            public function __construct(&$called)
+            {
+                $this->called = &$called;
+            }
+
+            public function sanitize($string)
+            {
+                $this->called = true;
+
+                return $string;
+            }
+        };
+
+        $ept = new EffectivePrimitiveTypeIdentifierService($customSanitizer);
+        $ept->getTypedValue('hello', false, false, false);
+        $this->assertFalse($called, 'Custom sanitizer must not be invoked when $sanitizeHtml is false.');
+    }
+
+    /**
+     * Passing no constructor argument must use the default sanitizer without errors.
+     */
+    public function testDefaultSanitizerUsedWhenNoConstructorArgument(): void
+    {
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue('<script>alert(1)</script>', false, false, true);
+        $this->assertIsString($result);
+        $this->assertStringNotContainsString('<', $result);
+        $this->assertStringNotContainsString('script', $result);
     }
 }
