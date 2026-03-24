@@ -84,7 +84,6 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *
      * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null
      */
-    #[\Override]
     public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         if (null === $data) {
@@ -128,7 +127,6 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *
      * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null the typed value at $needle, or null if the key is absent
      */
-    #[\Override]
     public function getTypedValueFromArray($needle, $array, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         return is_array($array) && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml) : null;
@@ -148,7 +146,6 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *
      * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
-    #[\Override]
     public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         $resultSAPI = filter_input(INPUT_POST, $needle, FILTER_UNSAFE_RAW);
@@ -173,7 +170,6 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *
      * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
-    #[\Override]
     public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         $resultSAPI = filter_input(INPUT_SERVER, $needle, FILTER_UNSAFE_RAW);
@@ -198,7 +194,6 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *
      * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
-    #[\Override]
     public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         $resultSAPI = filter_input(INPUT_GET, $needle, FILTER_UNSAFE_RAW);
@@ -223,7 +218,6 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *
      * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
-    #[\Override]
     public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         $resultSAPI = filter_input(INPUT_COOKIE, $needle, FILTER_UNSAFE_RAW);
@@ -248,7 +242,6 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *
      * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
-    #[\Override]
     public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
         $resultSAPI = filter_input(INPUT_ENV, $needle, FILTER_UNSAFE_RAW);
@@ -340,9 +333,7 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      */
     private function getSanitizedString($value, $trim = false, $sanitizeHtml = false)
     {
-        $result = $sanitizeHtml
-            ? $this->htmlSanitizer->sanitize($value)
-            : filter_var($value, FILTER_UNSAFE_RAW);
+        $result = $sanitizeHtml ? $this->htmlSanitizer->sanitize($value) : filter_var($value, FILTER_UNSAFE_RAW);
 
         return $trim ? trim($result) : $result;
     }

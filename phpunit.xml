@@ -5,7 +5,7 @@
          colors="true">
 
     <testsuites>
-        <testsuite name="PicDiet Test Suite">
+        <testsuite name="TypeIdentifier Test Suite">
             <file>tests/EffectivePrimitiveTypeTest.php</file>
             <file>tests/HtmlSanitizerServiceTest.php</file>
         </testsuite>
