@@ -135,122 +135,106 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Returns the typed value for a key from the $_POST superglobal.
      *
-     * Reads $needle from INPUT_POST via filter_input() first; falls back to
-     * direct $_POST access when filter_input() returns null (e.g. CLI or unit
-     * test environments where SAPI input is unavailable).
+     * @param string $needle       Key to look up in $_POST.
+     * @param bool   $trim         Passed through to getTypedValue().
+     * @param bool   $forceString  Passed through to getTypedValue().
+     * @param bool   $sanitizeHtml Passed through to getTypedValue().
      *
-     * @param string $needle       key to look up in $_POST
-     * @param bool   $trim         passed through to getTypedValue()
-     * @param bool   $forceString  passed through to getTypedValue()
-     * @param bool   $sanitizeHtml passed through to getTypedValue()
-     *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $resultSAPI = filter_input(INPUT_POST, $needle, FILTER_UNSAFE_RAW);
-
-        if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
-        }
-
-        return array_key_exists($needle, $_POST) ? $this->getTypedValue(filter_var($_POST[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml) : null;
+        return $this->readFromInput(INPUT_POST, $_POST, $needle, $trim, $forceString, $sanitizeHtml);
     }
 
     /**
      * Returns the typed value for a key from the $_SERVER superglobal.
      *
-     * Reads $needle from INPUT_SERVER via filter_input() first; falls back to
-     * direct $_SERVER access when filter_input() returns null.
+     * @param string $needle       Key to look up in $_SERVER.
+     * @param bool   $trim         Passed through to getTypedValue().
+     * @param bool   $forceString  Passed through to getTypedValue().
+     * @param bool   $sanitizeHtml Passed through to getTypedValue().
      *
-     * @param string $needle       key to look up in $_SERVER
-     * @param bool   $trim         passed through to getTypedValue()
-     * @param bool   $forceString  passed through to getTypedValue()
-     * @param bool   $sanitizeHtml passed through to getTypedValue()
-     *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $resultSAPI = filter_input(INPUT_SERVER, $needle, FILTER_UNSAFE_RAW);
-
-        if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
-        }
-
-        return array_key_exists($needle, $_SERVER) ? $this->getTypedValue(filter_var($_SERVER[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml) : null;
+        return $this->readFromInput(INPUT_SERVER, $_SERVER, $needle, $trim, $forceString, $sanitizeHtml);
     }
 
     /**
      * Returns the typed value for a key from the $_GET superglobal.
      *
-     * Reads $needle from INPUT_GET via filter_input() first; falls back to
-     * direct $_GET access when filter_input() returns null.
+     * @param string $needle       Key to look up in $_GET.
+     * @param bool   $trim         Passed through to getTypedValue().
+     * @param bool   $forceString  Passed through to getTypedValue().
+     * @param bool   $sanitizeHtml Passed through to getTypedValue().
      *
-     * @param string $needle       key to look up in $_GET
-     * @param bool   $trim         passed through to getTypedValue()
-     * @param bool   $forceString  passed through to getTypedValue()
-     * @param bool   $sanitizeHtml passed through to getTypedValue()
-     *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $resultSAPI = filter_input(INPUT_GET, $needle, FILTER_UNSAFE_RAW);
-
-        if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
-        }
-
-        return array_key_exists($needle, $_GET) ? $this->getTypedValue(filter_var($_GET[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml) : null;
+        return $this->readFromInput(INPUT_GET, $_GET, $needle, $trim, $forceString, $sanitizeHtml);
     }
 
     /**
      * Returns the typed value for a key from the $_COOKIE superglobal.
      *
-     * Reads $needle from INPUT_COOKIE via filter_input() first; falls back to
-     * direct $_COOKIE access when filter_input() returns null.
+     * @param string $needle       Key to look up in $_COOKIE.
+     * @param bool   $trim         Passed through to getTypedValue().
+     * @param bool   $forceString  Passed through to getTypedValue().
+     * @param bool   $sanitizeHtml Passed through to getTypedValue().
      *
-     * @param string $needle       key to look up in $_COOKIE
-     * @param bool   $trim         passed through to getTypedValue()
-     * @param bool   $forceString  passed through to getTypedValue()
-     * @param bool   $sanitizeHtml passed through to getTypedValue()
-     *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $resultSAPI = filter_input(INPUT_COOKIE, $needle, FILTER_UNSAFE_RAW);
-
-        if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
-        }
-
-        return array_key_exists($needle, $_COOKIE) ? $this->getTypedValue(filter_var($_COOKIE[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml) : null;
+        return $this->readFromInput(INPUT_COOKIE, $_COOKIE, $needle, $trim, $forceString, $sanitizeHtml);
     }
 
     /**
      * Returns the typed value for a key from the $_ENV superglobal.
      *
-     * Reads $needle from INPUT_ENV via filter_input() first; falls back to
-     * direct $_ENV access when filter_input() returns null.
+     * @param string $needle       Key to look up in $_ENV.
+     * @param bool   $trim         Passed through to getTypedValue().
+     * @param bool   $forceString  Passed through to getTypedValue().
+     * @param bool   $sanitizeHtml Passed through to getTypedValue().
      *
-     * @param string $needle       key to look up in $_ENV
-     * @param bool   $trim         passed through to getTypedValue()
-     * @param bool   $forceString  passed through to getTypedValue()
-     * @param bool   $sanitizeHtml passed through to getTypedValue()
-     *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
-        $resultSAPI = filter_input(INPUT_ENV, $needle, FILTER_UNSAFE_RAW);
+        return $this->readFromInput(INPUT_ENV, $_ENV, $needle, $trim, $forceString, $sanitizeHtml);
+    }
+
+    /**
+     * Shared superglobal reader used by all getTypedValueFrom*() public methods.
+     *
+     * Attempts to read $needle from the SAPI input stream via filter_input()
+     * first, which is the correct approach in web contexts. Falls back to direct
+     * superglobal array access when filter_input() returns null (e.g. in CLI,
+     * unit tests, or custom SAPI environments where the input stream is absent).
+     *
+     * @param int        $inputType  One of the INPUT_* constants (INPUT_POST, INPUT_GET, etc.).
+     * @param array<mixed> $superglobal Reference to the corresponding $_* superglobal array.
+     * @param string     $needle     Key to look up.
+     * @param bool       $trim       Passed through to getTypedValue().
+     * @param bool       $forceString Passed through to getTypedValue().
+     * @param bool       $sanitizeHtml Passed through to getTypedValue().
+     *
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
+     */
+    private function readFromInput($inputType, array &$superglobal, $needle, $trim, $forceString, $sanitizeHtml)
+    {
+        $resultSAPI = filter_input($inputType, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
             return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
-        return array_key_exists($needle, $_ENV) ? $this->getTypedValue(filter_var($_ENV[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml) : null;
+        return array_key_exists($needle, $superglobal)
+            ? $this->getTypedValue(filter_var($superglobal[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml)
+            : null;
     }
 
     /**
