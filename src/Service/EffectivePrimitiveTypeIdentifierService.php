@@ -240,7 +240,13 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Validates and returns a boolean value.
      *
-     * Uses FILTER_VALIDATE_BOOL to ensure the value is a proper PHP bool.
+     * Selects the appropriate filter constant based on the running PHP version:
+     *  - PHP >= 8.0: FILTER_VALIDATE_BOOL    (canonical name, introduced in 8.0)
+     *  - PHP <  8.0: FILTER_VALIDATE_BOOLEAN (original name, available since 5.2)
+     *
+     * Both constants share the same integer value (258); the branch for the
+     * version NOT running is never evaluated at runtime, so no undefined-constant
+     * error or notice is triggered on either version.
      *
      * @param bool $value raw boolean value
      *
@@ -248,7 +254,7 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      */
     private function getSanitizedBool($value)
     {
-        return filter_var($value, FILTER_VALIDATE_BOOL);
+        return filter_var($value, PHP_VERSION_ID >= 80000 ? FILTER_VALIDATE_BOOL : FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
