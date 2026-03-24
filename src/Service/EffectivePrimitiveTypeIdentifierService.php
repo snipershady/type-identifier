@@ -21,19 +21,47 @@
 namespace TypeIdentifier\Service;
 
 /**
- * Description of EffectivePrimitiveTypeIdentifierService.
+ * Service to identify and return the effective primitive type of a variable.
+ *
+ * Inspects the actual runtime value of a variable and casts it to the most
+ * appropriate PHP primitive type: bool, int, float, string, or null.
+ * Numeric strings (e.g. "42" → int, "3.14" → float) are automatically
+ * promoted to their numeric counterpart unless $forceString is set to true.
+ *
+ * Additional features:
+ *  - Optional whitespace trimming for string values.
+ *  - Optional HTML/XSS sanitization that strips tags and removes dangerous
+ *    characters (&, <, >, ", %, (, ), +, backtick, low/high bytes).
+ *  - Recursive processing of arrays (all values are typed individually).
+ *  - Typed reads directly from PHP superglobals ($_POST, $_GET, $_COOKIE,
+ *    $_SERVER, $_ENV) via filter_input() with a $_* fallback.
+ *  - Typed reads from any associative or indexed array.
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
 final class EffectivePrimitiveTypeIdentifierService
 {
     /**
-     * <p>Returns strict effective primitive type of a variable</p>.
+     * Returns the effective primitive type of a variable.
      *
-     * @param mixed $data         <p>Variable to sanitize and get again with right strict primitive type</p>
-     * @param bool  $trim         <p>Trim value if type is an String</p>
-     * @param bool  $forceString  <p>Force string parsing for values like "1", so it will be handlet as String and not as integer</p>
-     * @param bool  $sanitizeHtml <p>When true, the string will be sanitized from HTML tags</p>
+     * Resolves the real PHP primitive type of $data and returns the sanitized
+     * value cast to that type.  Resolution order:
+     *   1. null  → null
+     *   2. array → each element is recursively resolved
+     *   3. bool  → bool  (skipped when $forceString is true)
+     *   4. numeric (int/float string or number) → int|float  (skipped when $forceString is true)
+     *   5. string → string (optionally trimmed and/or HTML-sanitized)
+     *   6. anything else → null
+     *
+     * @param mixed $data         Variable to resolve and sanitize.
+     * @param bool  $trim         When true, the returned string is trimmed of leading/trailing whitespace.
+     *                            Has no effect on non-string values.
+     * @param bool  $forceString  When true, numeric-looking strings (e.g. "1", "3.14") are kept as
+     *                            strings instead of being promoted to int or float.
+     *                            Bool values are also treated as strings when this flag is set.
+     * @param bool  $sanitizeHtml When true, the string is stripped of HTML tags and dangerous characters
+     *                            (&, <, >, ", %, (, ), +, backtick, low/high bytes).
+     *                            Has no effect on non-string values.
      *
      * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null
      */
@@ -66,15 +94,19 @@ final class EffectivePrimitiveTypeIdentifierService
     }
 
     /**
-     * <p>Returns value from a needle of an array, sanitized and with effective primitive strict type</p>.
+     * Returns the typed value for a specific key from an arbitrary array.
      *
-     * @param string            $needle       <p>Value to check.</p>
-     * @param array<mixed>|null $array        <p>An array with keys to check. If $array is null, returns null</p>
-     * @param bool              $trim         <p>Trim value if type is an String</p>
-     * @param bool              $forceString  <p>Force string parsing for values like "1"</p>
-     * @param bool              $sanitizeHtml <p>Sanitize html tags</p>
+     * Looks up $needle in $array and, if found, returns the sanitized value
+     * cast to its effective primitive type via {@see getTypedValue()}.
+     * Returns null when $array is not an array or when the key does not exist.
      *
-     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     * @param string            $needle       Key to look up inside $array.
+     * @param array<mixed>|null $array        Source array. If null or not an array, null is returned.
+     * @param bool              $trim         Passed through to {@see getTypedValue()}.
+     * @param bool              $forceString  Passed through to {@see getTypedValue()}.
+     * @param bool              $sanitizeHtml Passed through to {@see getTypedValue()}.
+     *
+     * @return bool|int|float|string|null The typed value at $needle, or null if the key is absent.
      */
     public function getTypedValueFromArray($needle, $array, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -82,14 +114,18 @@ final class EffectivePrimitiveTypeIdentifierService
     }
 
     /**
-     * <p>Returns value from a needle POST, sanitized and with effective primitive strict type</p>.
+     * Returns the typed value for a key from the $_POST superglobal.
      *
-     * @param string $needle       <p>Value to check.</p>
-     * @param bool   $trim         <p>Trim value if type is an String</p>
-     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
-     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
+     * Reads $needle from INPUT_POST via filter_input() first; falls back to
+     * direct $_POST access when filter_input() returns null (e.g. CLI or unit
+     * test environments where SAPI input is unavailable).
      *
-     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     * @param string $needle       Key to look up in $_POST.
+     * @param bool   $trim         Passed through to {@see getTypedValue()}.
+     * @param bool   $forceString  Passed through to {@see getTypedValue()}.
+     * @param bool   $sanitizeHtml Passed through to {@see getTypedValue()}.
+     *
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -99,18 +135,21 @@ final class EffectivePrimitiveTypeIdentifierService
             return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
-        return array_key_exists($needle, $_POST) ? $this->getTypedValue(filter_var($_POST[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
+        return array_key_exists($needle, $_POST) ? $this->getTypedValue(filter_var($_POST[$needle]), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
-     * <p>Returns value from a needle POST, sanitized and with effective primitive strict type</p>.
+     * Returns the typed value for a key from the $_SERVER superglobal.
      *
-     * @param string $needle       <p>Value to check.</p>
-     * @param bool   $trim         <p>Trim value if type is an String</p>
-     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
-     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
+     * Reads $needle from INPUT_SERVER via filter_input() first; falls back to
+     * direct $_SERVER access when filter_input() returns null.
      *
-     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     * @param string $needle       Key to look up in $_SERVER.
+     * @param bool   $trim         Passed through to {@see getTypedValue()}.
+     * @param bool   $forceString  Passed through to {@see getTypedValue()}.
+     * @param bool   $sanitizeHtml Passed through to {@see getTypedValue()}.
+     *
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -120,18 +159,21 @@ final class EffectivePrimitiveTypeIdentifierService
             return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
-        return array_key_exists($needle, $_SERVER) ? $this->getTypedValue(filter_var($_SERVER[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
+        return array_key_exists($needle, $_SERVER) ? $this->getTypedValue(filter_var($_SERVER[$needle]), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
-     * <p>Returns value from a needle GET, sanitized and with effective primitive strict type</p>.
+     * Returns the typed value for a key from the $_GET superglobal.
      *
-     * @param string $needle       <p>Value to check.</p>
-     * @param bool   $trim         <p>Trim value if type is an String</p>
-     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
-     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
+     * Reads $needle from INPUT_GET via filter_input() first; falls back to
+     * direct $_GET access when filter_input() returns null.
      *
-     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     * @param string $needle       Key to look up in $_GET.
+     * @param bool   $trim         Passed through to {@see getTypedValue()}.
+     * @param bool   $forceString  Passed through to {@see getTypedValue()}.
+     * @param bool   $sanitizeHtml Passed through to {@see getTypedValue()}.
+     *
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -141,18 +183,21 @@ final class EffectivePrimitiveTypeIdentifierService
             return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
-        return array_key_exists($needle, $_GET) ? $this->getTypedValue(filter_var($_GET[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
+        return array_key_exists($needle, $_GET) ? $this->getTypedValue(filter_var($_GET[$needle]), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
-     * <p>Returns value from a needle COOKIE, sanitized and with effective primitive strict type</p>.
+     * Returns the typed value for a key from the $_COOKIE superglobal.
      *
-     * @param string $needle       <p>Value to check.</p>
-     * @param bool   $trim         <p>Trim value if type is an String</p>
-     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
-     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
+     * Reads $needle from INPUT_COOKIE via filter_input() first; falls back to
+     * direct $_COOKIE access when filter_input() returns null.
      *
-     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     * @param string $needle       Key to look up in $_COOKIE.
+     * @param bool   $trim         Passed through to {@see getTypedValue()}.
+     * @param bool   $forceString  Passed through to {@see getTypedValue()}.
+     * @param bool   $sanitizeHtml Passed through to {@see getTypedValue()}.
+     *
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -162,18 +207,21 @@ final class EffectivePrimitiveTypeIdentifierService
             return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
-        return array_key_exists($needle, $_COOKIE) ? $this->getTypedValue(filter_var($_COOKIE[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
+        return array_key_exists($needle, $_COOKIE) ? $this->getTypedValue(filter_var($_COOKIE[$needle]), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
-     * <p>Returns value from a needle ENV, sanitized and with effective primitive strict type</p>.
+     * Returns the typed value for a key from the $_ENV superglobal.
      *
-     * @param string $needle       <p>Value to check.</p>
-     * @param bool   $trim         <p>Trim value if type is an String</p>
-     * @param bool   $forceString  <p>Force string parsing for values like "1"</p>
-     * @param bool   $sanitizeHtml <p>Sanitize html tags</p>
+     * Reads $needle from INPUT_ENV via filter_input() first; falls back to
+     * direct $_ENV access when filter_input() returns null.
      *
-     * @return bool|int|float|string|null <p>Returns primitive type from the needle. NULL if key does not exists</p>
+     * @param string $needle       Key to look up in $_ENV.
+     * @param bool   $trim         Passed through to {@see getTypedValue()}.
+     * @param bool   $forceString  Passed through to {@see getTypedValue()}.
+     * @param bool   $sanitizeHtml Passed through to {@see getTypedValue()}.
+     *
+     * @return bool|int|float|string|null The typed value, or null if the key is absent.
      */
     public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -183,13 +231,15 @@ final class EffectivePrimitiveTypeIdentifierService
             return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
-        return array_key_exists($needle, $_ENV) ? $this->getTypedValue(filter_var($_ENV[$needle], FILTER_NULL_ON_FAILURE), $trim, $forceString, $sanitizeHtml) : null;
+        return array_key_exists($needle, $_ENV) ? $this->getTypedValue(filter_var($_ENV[$needle]), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
-     * Return sanitized bool.
+     * Validates and returns a boolean value.
      *
-     * @param bool $value
+     * Uses FILTER_VALIDATE_BOOL to ensure the value is a proper PHP bool.
+     *
+     * @param bool $value Raw boolean value.
      *
      * @return bool
      */
@@ -199,27 +249,32 @@ final class EffectivePrimitiveTypeIdentifierService
     }
 
     /**
-     * Return sanitized number.
+     * Resolves a numeric value to either int or float.
      *
-     * @param mixed $value
-     *                     must be "numeric"
+     * Adds 0 to promote a numeric string to its native numeric type, then
+     * delegates to the appropriate int or float sanitizer.
+     *
+     * @param mixed $value Must satisfy is_numeric(); behaviour is undefined otherwise.
      *
      * @return int|float
      */
     private function getSanitizedNumber($value)
     {
-        $numericvalue = $value + 0;
-        if (is_int($numericvalue)) {
-            return $this->getSanitizedIntValue($numericvalue);
+        $numericValue = $value + 0;
+        if (is_int($numericValue)) {
+            return $this->getSanitizedIntValue($numericValue);
         }
 
-        return $this->getSanitizedFloatValue($numericvalue);
+        return $this->getSanitizedFloatValue($numericValue);
     }
 
     /**
-     * Return sanitized string.
+     * Sanitizes and returns an integer value.
      *
-     * @param int $value
+     * Applies FILTER_SANITIZE_NUMBER_INT to strip any unexpected characters
+     * before casting to int.
+     *
+     * @param int $value Integer value to sanitize.
      *
      * @return int
      */
@@ -229,9 +284,12 @@ final class EffectivePrimitiveTypeIdentifierService
     }
 
     /**
-     * Return sanitized string.
+     * Sanitizes and returns a float value.
      *
-     * @param float $value
+     * Applies FILTER_SANITIZE_NUMBER_FLOAT with FILTER_FLAG_ALLOW_FRACTION to
+     * preserve the decimal part while stripping unexpected characters.
+     *
+     * @param float $value Float value to sanitize.
      *
      * @return float
      */
@@ -241,35 +299,52 @@ final class EffectivePrimitiveTypeIdentifierService
     }
 
     /**
-     * Return sanitized string.
+     * Sanitizes and returns a string value.
      *
-     * @param string $value
-     * @param bool   $trim
-     * @param bool   $sanitizeHtml
+     * When $sanitizeHtml is true the string is passed through {@see sanitizeHtml()}
+     * which strips HTML tags and removes dangerous characters.
+     * When $sanitizeHtml is false, FILTER_UNSAFE_RAW is
+     * applied (passthrough, no conversion).
+     * Optionally trims leading/trailing whitespace after sanitization.
+     *
+     * @param string $value        Raw string value.
+     * @param bool   $trim         When true, the result is trimmed.
+     * @param bool   $sanitizeHtml When true, HTML/XSS sanitization is applied.
      *
      * @return string
      */
     private function getSanitizedString($value, $trim = false, $sanitizeHtml = false)
     {
-        $result = $sanitizeHtml ? $this->sanitizeHtml($value) : filter_var($value, FILTER_UNSAFE_RAW, FILTER_NULL_ON_FAILURE);
+        $result = $sanitizeHtml ? $this->sanitizeHtml($value) : filter_var($value, FILTER_UNSAFE_RAW);
 
         return $trim ? trim($result) : $result;
     }
 
     /**
-     * @param string $string
+     * Strips HTML tags and dangerous characters from a string.
      *
-     * @return string
+     * Processing pipeline:
+     *  1. FILTER_UNSAFE_RAW with FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH |
+     *     FILTER_FLAG_STRIP_BACKTICK — removes control bytes, high bytes and backticks.
+     *  2. strip_tags() — removes all HTML/XML tags.
+     *  3. html_entity_decode() — converts HTML entities to their UTF-8 characters
+     *     (e.g. &amp; → &) so that double-encoded payloads are also neutralised.
+     *  4. preg_replace() — removes &, <, >, ", %, (, ), + characters.
+     *
+     * @param string $string Raw string potentially containing HTML or XSS payloads.
+     *
+     * @return string Sanitized plain-text string.
      */
     private function sanitizeHtml($string)
     {
         $stringFiltered = (string) filter_var(
             $string,
             FILTER_UNSAFE_RAW,
-            FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
+            FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
         );
-        $stringStripped = strip_tags($stringFiltered);
-        $stringDecoded = html_entity_decode($stringStripped);
+        $stringDecoded = html_entity_decode($stringFiltered);
+        $stringStripped = strip_tags($stringDecoded);
+        
         $pattern = [
             '/\&/',
             '/</',
@@ -282,6 +357,6 @@ final class EffectivePrimitiveTypeIdentifierService
         ];
         $replacement = '';
 
-        return (string) preg_replace($pattern, $replacement, $stringDecoded);
+        return (string) preg_replace($pattern, $replacement, $stringStripped);
     }
 }
