@@ -65,7 +65,6 @@ final class HtmlSanitizerService implements HtmlSanitizerServiceInterface
      *
      * @return string sanitized plain-text string
      */
-    #[\Override]
     public function sanitize($string)
     {
         $stringFiltered = (string) filter_var(

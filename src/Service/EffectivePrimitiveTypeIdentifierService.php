@@ -55,7 +55,7 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param HtmlSanitizerServiceInterface|null $htmlSanitizer Custom sanitizer to use.
      *                                                          When null, HtmlSanitizerService is used.
      */
-    public function __construct(?HtmlSanitizerServiceInterface $htmlSanitizer = null)
+    public function __construct($htmlSanitizer = null)
     {
         $this->htmlSanitizer = null !== $htmlSanitizer ? $htmlSanitizer : new HtmlSanitizerService();
     }
@@ -135,12 +135,12 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Returns the typed value for a key from the $_POST superglobal.
      *
-     * @param string $needle       Key to look up in $_POST.
-     * @param bool   $trim         Passed through to getTypedValue().
-     * @param bool   $forceString  Passed through to getTypedValue().
-     * @param bool   $sanitizeHtml Passed through to getTypedValue().
+     * @param string $needle       key to look up in $_POST
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null The typed value, or null if the key is absent.
+     * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
     public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -150,12 +150,12 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Returns the typed value for a key from the $_SERVER superglobal.
      *
-     * @param string $needle       Key to look up in $_SERVER.
-     * @param bool   $trim         Passed through to getTypedValue().
-     * @param bool   $forceString  Passed through to getTypedValue().
-     * @param bool   $sanitizeHtml Passed through to getTypedValue().
+     * @param string $needle       key to look up in $_SERVER
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null The typed value, or null if the key is absent.
+     * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
     public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -165,12 +165,12 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Returns the typed value for a key from the $_GET superglobal.
      *
-     * @param string $needle       Key to look up in $_GET.
-     * @param bool   $trim         Passed through to getTypedValue().
-     * @param bool   $forceString  Passed through to getTypedValue().
-     * @param bool   $sanitizeHtml Passed through to getTypedValue().
+     * @param string $needle       key to look up in $_GET
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null The typed value, or null if the key is absent.
+     * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
     public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -180,12 +180,12 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Returns the typed value for a key from the $_COOKIE superglobal.
      *
-     * @param string $needle       Key to look up in $_COOKIE.
-     * @param bool   $trim         Passed through to getTypedValue().
-     * @param bool   $forceString  Passed through to getTypedValue().
-     * @param bool   $sanitizeHtml Passed through to getTypedValue().
+     * @param string $needle       key to look up in $_COOKIE
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null The typed value, or null if the key is absent.
+     * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
     public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -195,12 +195,12 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Returns the typed value for a key from the $_ENV superglobal.
      *
-     * @param string $needle       Key to look up in $_ENV.
-     * @param bool   $trim         Passed through to getTypedValue().
-     * @param bool   $forceString  Passed through to getTypedValue().
-     * @param bool   $sanitizeHtml Passed through to getTypedValue().
+     * @param string $needle       key to look up in $_ENV
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null The typed value, or null if the key is absent.
+     * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
     public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
     {
@@ -215,14 +215,14 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * superglobal array access when filter_input() returns null (e.g. in CLI,
      * unit tests, or custom SAPI environments where the input stream is absent).
      *
-     * @param int        $inputType  One of the INPUT_* constants (INPUT_POST, INPUT_GET, etc.).
-     * @param array<mixed> $superglobal Reference to the corresponding $_* superglobal array.
-     * @param string     $needle     Key to look up.
-     * @param bool       $trim       Passed through to getTypedValue().
-     * @param bool       $forceString Passed through to getTypedValue().
-     * @param bool       $sanitizeHtml Passed through to getTypedValue().
+     * @param int          $inputType    One of the INPUT_* constants (INPUT_POST, INPUT_GET, etc.).
+     * @param array<mixed> $superglobal  reference to the corresponding $_* superglobal array
+     * @param string       $needle       key to look up
+     * @param bool         $trim         passed through to getTypedValue()
+     * @param bool         $forceString  passed through to getTypedValue()
+     * @param bool         $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null The typed value, or null if the key is absent.
+     * @return bool|int|float|string|null the typed value, or null if the key is absent
      */
     private function readFromInput($inputType, array &$superglobal, $needle, $trim, $forceString, $sanitizeHtml)
     {

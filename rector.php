@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use Rector\CodeQuality\Rector\Foreach_\UnusedForeachValueToArrayKeysRector;
-use Rector\CodeQuality\Rector\FunctionLike\SimplifyUselessVariableRector;
+use Rector\CodingStyle\Rector\Stmt\NewlineAfterStatementRector;
 use Rector\Config\RectorConfig;
-use Rector\DeadCode\Rector\ClassMethod\RemoveUselessParamTagRector;
-use Rector\DeadCode\Rector\ClassMethod\RemoveUselessReturnTagRector;
-use Rector\DeadCode\Rector\Foreach_\RemoveUnusedForeachKeyRector;
+use Rector\Naming\Rector\Assign\RenameVariableToMatchMethodCallReturnTypeRector;
+use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
+use Rector\Naming\Rector\ClassMethod\RenameVariableToMatchNewTypeRector;
 use Rector\Php84\Rector\MethodCall\NewMethodCallWithoutParenthesesRector;
 use Rector\Set\ValueObject\LevelSetList;
-use Rector\Symfony\CodeQuality\Rector\Class_\InlineClassRoutePrefixRector;
+use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromAssignsRector;
+use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromStrictSetUpRector;
 use Rector\ValueObject\PhpVersion;
 
 return RectorConfig::configure()
@@ -19,19 +19,20 @@ return RectorConfig::configure()
                     __DIR__.'/tests',
                 ])
                 ->withSkip([
-                    // InlineClassRoutePrefixRector::class,
-                    // NewMethodCallWithoutParenthesesRector::class,
-                    // UnusedForeachValueToArrayKeysRector::class,
-                    // RemoveUnusedForeachKeyRector::class,
-                    // RemoveUselessParamTagRector::class,
-                    // RemoveUselessReturnTagRector::class
-                    // SimplifyUselessVariableRector::class
+                    NewlineAfterStatementRector::class,
+                    NewMethodCallWithoutParenthesesRector::class,
+                    RenamePropertyToMatchTypeRector::class,
+                    RenameVariableToMatchMethodCallReturnTypeRector::class,
+                    RenameVariableToMatchNewTypeRector::class,
+                    TypedPropertyFromAssignsRector::class,
+                    TypedPropertyFromStrictSetUpRector::class,
+                    Rector\TypeDeclaration\Rector\ClassMethod\StringReturnTypeFromStrictScalarReturnsRector::class,
                 ])
                 ->withPreparedSets(
                     // deadCode: true,
                     // codeQuality: true,
-                    // codingStyle: true,
-                    // naming: true,
+                    codingStyle: true,
+                    naming: true,
                     // privatization: true,
                     // typeDeclarations: true,
                     // rectorPreset: true
@@ -55,5 +56,5 @@ return RectorConfig::configure()
                 ->withTypeCoverageLevel(50)
                 ->withDeadCodeLevel(50)
                 ->withCodeQualityLevel(50)
-                // ->withCodingStyleLevel(24) // use php-csfix instead
+// ->withCodingStyleLevel(24) // use php-csfix instead
 ;
