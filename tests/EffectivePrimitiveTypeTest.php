@@ -190,7 +190,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 'snipershady';
         $whitespaces = '      ';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value.$whitespaces, true); // Trim enabled
+        $result = $ept->getTypedValue($value . $whitespaces, true); // Trim enabled
         $this->assertTrue($value === $result);
         $this->assertEquals($value, $result);
         $this->assertIsString($result);
@@ -199,7 +199,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testStringWithIntegerPrefix(): void
     {
         $int = 1;
-        $value = $int.'snipershady';
+        $value = $int . 'snipershady';
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
         $this->assertTrue($value === $result);
@@ -210,7 +210,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testStringWithIntegerSuffix(): void
     {
         $int = 1;
-        $value = 'snipershady'.$int;
+        $value = 'snipershady' . $int;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
         $this->assertTrue($value === $result);

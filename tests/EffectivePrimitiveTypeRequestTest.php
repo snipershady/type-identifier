@@ -42,7 +42,7 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
 
     public function testInputPost(): void
     {
-        $response = $this->callEntrypoint('GET', 'typeidentifierinputpost');
+        $response = $this->callEntrypoint('POST', 'typeidentifierinputpost');
         $expectedInputServer = 'typeidentifier';
         $expectedInput = 'typeidentifierinputpost';
         $this->assertEquals($expectedInputServer, $response['agent']);
@@ -68,7 +68,7 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
             $options[CURLOPT_POST] = true;
             $options[CURLOPT_POSTFIELDS] = ['param' => $inputParameter];
         } else {
-            $options[CURLOPT_URL] = $url.'?param='.urlencode($inputParameter);
+            $options[CURLOPT_URL] = $url . '?param=' . urlencode($inputParameter);
         }
 
         curl_setopt_array($ch, $options);
