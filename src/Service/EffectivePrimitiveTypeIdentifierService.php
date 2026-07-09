@@ -215,7 +215,7 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * superglobal array access when filter_input() returns null (e.g. in CLI,
      * unit tests, or custom SAPI environments where the input stream is absent).
      *
-     * @param int          $inputType    One of the INPUT_* constants (INPUT_POST, INPUT_GET, etc.).
+     * @param 0|1|2|4|5    $inputType    One of the INPUT_* constants (INPUT_POST, INPUT_GET, etc.).
      * @param array<mixed> $superglobal  reference to the corresponding $_* superglobal array
      * @param string       $needle       key to look up
      * @param bool         $trim         passed through to getTypedValue()
@@ -226,6 +226,14 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      */
     private function readFromInput($inputType, array &$superglobal, $needle, $trim, $forceString, $sanitizeHtml)
     {
+        // filter_input() (and filter_var() on the fallback path below) only handle
+        // scalar values: on an array value they return null/false and would end up
+        // silently discarding the data. Array values are read directly from the
+        // superglobal and passed to getTypedValue(), which already recurses correctly.
+        if (array_key_exists($needle, $superglobal) && is_array($superglobal[$needle])) {
+            return $this->getTypedValue($superglobal[$needle], $trim, $forceString, $sanitizeHtml);
+        }
+
         $resultSAPI = filter_input($inputType, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
@@ -293,18 +301,21 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     }
 
     /**
-     * Sanitizes and returns a float value.
+     * Returns a native float value as-is.
      *
-     * Applies FILTER_SANITIZE_NUMBER_FLOAT with FILTER_FLAG_ALLOW_FRACTION to
-     * preserve the decimal part while stripping unexpected characters.
+     * $value is already a native float promoted via `$value + 0` in getSanitizedNumber(),
+     * so no further sanitization is applied. FILTER_SANITIZE_NUMBER_FLOAT operates on the
+     * string representation of $value: for floats printed in scientific notation (e.g.
+     * very large/small magnitudes, beyond the `precision` ini setting), it strips the
+     * exponent marker and silently truncates the value to something numerically wrong.
      *
-     * @param float $value float value to sanitize
+     * @param float $value float value to return
      *
      * @return float
      */
     private function getSanitizedFloatValue($value)
     {
-        return (float) filter_var($value, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        return (float) $value;
     }
 
     /**
