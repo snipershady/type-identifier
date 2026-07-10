@@ -23,6 +23,10 @@ namespace TypeIdentifier\Tests;
 /**
  * Description of EffectivePrimitiveTypeTest.
  *
+ * Integration tests that exercise tests/entrypoint.php over a real HTTP
+ * request (GET and POST), verifying that EffectivePrimitiveTypeIdentifierService
+ * correctly types values read from the $_GET / $_POST superglobals.
+ *
  * @example ./vendor/bin/phpunit tests/EffectivePrimitiveTypeRequestTest.php
  * @example ./vendor/bin/phpunit tests/EffectivePrimitiveTypeRequestTest.php --colors="auto" --debug
  *
@@ -37,6 +41,7 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
         $expectedInput = 'typeidentifierinputget';
         $this->assertEquals($expectedInputServer, $response['agent']);
         $this->assertEquals($expectedInput, $response['value']);
+        $this->assertIsString($response['value']);
         $this->assertTrue($response['is_valid']);
     }
 
@@ -47,15 +52,98 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
         $expectedInput = 'typeidentifierinputpost';
         $this->assertEquals($expectedInputServer, $response['agent']);
         $this->assertEquals($expectedInput, $response['value']);
+        $this->assertIsString($response['value']);
         $this->assertTrue($response['is_valid']);
     }
 
-    private function callEntrypoint(string $httpMethodString, string $inputParameter): array
+    public function testInputGetNumericStringIsCastToInt(): void
+    {
+        $response = $this->callEntrypoint('GET', '42');
+        $this->assertSame(42, $response['value']);
+        $this->assertIsInt($response['value']);
+    }
+
+    public function testInputPostNumericStringIsCastToInt(): void
+    {
+        $response = $this->callEntrypoint('POST', '42');
+        $this->assertSame(42, $response['value']);
+        $this->assertIsInt($response['value']);
+    }
+
+    public function testInputGetNumericStringIsCastToFloat(): void
+    {
+        $response = $this->callEntrypoint('GET', '3.14');
+        $this->assertSame(3.14, $response['value']);
+        $this->assertIsFloat($response['value']);
+    }
+
+    public function testInputPostNumericStringIsCastToFloat(): void
+    {
+        $response = $this->callEntrypoint('POST', '3.14');
+        $this->assertSame(3.14, $response['value']);
+        $this->assertIsFloat($response['value']);
+    }
+
+    public function testInputGetNegativeNumericString(): void
+    {
+        $response = $this->callEntrypoint('GET', '-7');
+        $this->assertSame(-7, $response['value']);
+        $this->assertIsInt($response['value']);
+    }
+
+    public function testInputPostNegativeNumericString(): void
+    {
+        $response = $this->callEntrypoint('POST', '-7');
+        $this->assertSame(-7, $response['value']);
+        $this->assertIsInt($response['value']);
+    }
+
+    public function testInputGetEmptyValueReturnsEmptyString(): void
+    {
+        $response = $this->callEntrypoint('GET', '');
+        $this->assertSame('', $response['value']);
+        $this->assertIsString($response['value']);
+    }
+
+    public function testInputPostEmptyValueReturnsEmptyString(): void
+    {
+        $response = $this->callEntrypoint('POST', '');
+        $this->assertSame('', $response['value']);
+        $this->assertIsString($response['value']);
+    }
+
+    public function testInputGetMissingParamReturnsNull(): void
+    {
+        $response = $this->callEntrypoint('GET');
+        $this->assertNull($response['value']);
+    }
+
+    public function testInputPostMissingParamReturnsNull(): void
+    {
+        $response = $this->callEntrypoint('POST');
+        $this->assertNull($response['value']);
+    }
+
+    public function testInputGetBooleanLikeStringStaysString(): void
+    {
+        $response = $this->callEntrypoint('GET', 'true');
+        $this->assertSame('true', $response['value']);
+        $this->assertIsString($response['value']);
+    }
+
+    public function testInputPostBooleanLikeStringStaysString(): void
+    {
+        $response = $this->callEntrypoint('POST', 'true');
+        $this->assertSame('true', $response['value']);
+        $this->assertIsString($response['value']);
+    }
+
+    private function callEntrypoint(string $httpMethodString, ?string $inputParameter = null): array
     {
         $httpMethod = strtoupper($httpMethodString);
         $ch = curl_init();
         $url = 'http://endpoint-test/tests/entrypoint.php';
-
+        //$url = 'http://epti.com/entrypoint.php';
         $options = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => [
@@ -66,9 +154,9 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
         if ('POST' === $httpMethod) {
             $options[CURLOPT_URL] = $url;
             $options[CURLOPT_POST] = true;
-            $options[CURLOPT_POSTFIELDS] = ['param' => $inputParameter];
+            $options[CURLOPT_POSTFIELDS] = null === $inputParameter ? [] : ['param' => $inputParameter];
         } else {
-            $options[CURLOPT_URL] = $url . '?param=' . urlencode($inputParameter);
+            $options[CURLOPT_URL] = null === $inputParameter ? $url : $url . '?param=' . urlencode($inputParameter);
         }
 
         curl_setopt_array($ch, $options);
