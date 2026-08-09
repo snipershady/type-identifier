@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TypeIdentifier\Tests;
 
 /*
@@ -38,10 +40,9 @@ use TypeIdentifier\Sanitizer\HtmlSanitizerService;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-class HtmlSanitizerServiceTest extends AbstractTestCase
+final class HtmlSanitizerServiceTest extends AbstractTestCase
 {
-    /** @var HtmlSanitizerService */
-    private $sanitizer;
+    private HtmlSanitizerService $sanitizer;
 
     protected function setUp(): void
     {

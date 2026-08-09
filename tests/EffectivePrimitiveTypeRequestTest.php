@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TypeIdentifier\Tests;
 
 /*
@@ -32,7 +34,7 @@ namespace TypeIdentifier\Tests;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
+final class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
 {
     public function testInputGet(): void
     {
@@ -73,14 +75,14 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
     public function testInputGetNumericStringIsCastToFloat(): void
     {
         $response = $this->callEntrypoint('GET', '3.14');
-        $this->assertSame(3.14, $response['value']);
+        $this->assertEqualsWithDelta(3.14, $response['value'], PHP_FLOAT_EPSILON);
         $this->assertIsFloat($response['value']);
     }
 
     public function testInputPostNumericStringIsCastToFloat(): void
     {
         $response = $this->callEntrypoint('POST', '3.14');
-        $this->assertSame(3.14, $response['value']);
+        $this->assertEqualsWithDelta(3.14, $response['value'], PHP_FLOAT_EPSILON);
         $this->assertIsFloat($response['value']);
     }
 
@@ -138,6 +140,9 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
         $this->assertIsString($response['value']);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function callEntrypoint(string $httpMethodString, ?string $inputParameter = null): array
     {
         $httpMethod = strtoupper($httpMethodString);
@@ -161,7 +166,14 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
 
         curl_setopt_array($ch, $options);
         $response = curl_exec($ch);
+        curl_close($ch);
 
-        return json_decode($response, true);
+        $this->assertIsString($response, 'cURL request to the test entrypoint failed.');
+
+        $decoded = json_decode($response, associative: true);
+
+        $this->assertIsArray($decoded);
+
+        return $decoded;
     }
 }

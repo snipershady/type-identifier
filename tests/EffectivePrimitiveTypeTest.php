@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TypeIdentifier\Tests;
 
 use TypeIdentifier\Sanitizer\HtmlSanitizerServiceInterface;
@@ -45,15 +47,15 @@ use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierServiceInterface;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-class EffectivePrimitiveTypeTest extends AbstractTestCase
+final class EffectivePrimitiveTypeTest extends AbstractTestCase
 {
     public function testPositiveInt(): void
     {
         $value = 1;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsInt($result);
     }
 
@@ -62,8 +64,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = -1;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsInt($result);
     }
 
@@ -81,7 +83,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = true;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
+        $this->assertSame($value, $result);
         $this->assertEquals($value, $result);
         $this->assertIsBool($result);
     }
@@ -91,8 +93,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 'true';
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -110,7 +112,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 1 === 1;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
+        $this->assertSame($value, $result);
         $this->assertEquals($value, $result);
         $this->assertIsBool($result);
     }
@@ -120,7 +122,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 1 === 0;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
+        $this->assertSame($value, $result);
         $this->assertEquals($value, $result);
         $this->assertIsBool($result);
     }
@@ -130,8 +132,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 1.1;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsFloat($result);
     }
 
@@ -140,8 +142,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = -1.1;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsFloat($result);
     }
 
@@ -150,8 +152,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 0.0;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsFloat($result);
     }
 
@@ -160,8 +162,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = '';
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -170,8 +172,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = '  ';
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -180,8 +182,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 'snipershady';
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -190,9 +192,9 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 'snipershady';
         $whitespaces = '      ';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value . $whitespaces, true); // Trim enabled
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $result = $ept->getTypedValue($value . $whitespaces, trim: true); // Trim enabled
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -202,8 +204,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = $int . 'snipershady';
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -213,8 +215,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 'snipershady' . $int;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -223,7 +225,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = null;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
-        $this->assertTrue($value === $result);
+        $this->assertSame($value, $result);
         $this->assertEquals($value, $result);
         $this->assertNull($result);
     }
@@ -234,8 +236,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
-        $this->assertTrue($array['value'] === $result);
-        $this->assertEquals($array['value'], $result);
+        $this->assertSame($array['value'], $result);
+        $this->assertSame($array['value'], $result);
         $this->assertIsInt($result);
     }
 
@@ -245,7 +247,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
-        $this->assertTrue($array['value'] == $result);
+        $this->assertEquals($array['value'], $result);
         $this->assertEquals($array['value'], $result);
         $this->assertIsInt($result);
     }
@@ -256,7 +258,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
-        $this->assertTrue($array['value'] == $result);
+        $this->assertEquals($array['value'], $result);
         $this->assertEquals($array['value'], $result);
         $this->assertIsString($result);
     }
@@ -267,7 +269,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
-        $this->assertTrue($array['value'] == $result);
+        $this->assertEquals($array['value'], $result);
         $this->assertEquals($array['value'], $result);
         $this->assertIsFloat($result);
     }
@@ -278,8 +280,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
-        $this->assertTrue($array['value'] === $result);
-        $this->assertEquals($array['value'], $result);
+        $this->assertSame($array['value'], $result);
+        $this->assertSame($array['value'], $result);
         $this->assertIsString($result);
     }
 
@@ -289,8 +291,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
-        $this->assertTrue($array['value'] === $result);
-        $this->assertEquals($array['value'], $result);
+        $this->assertSame($array['value'], $result);
+        $this->assertSame($array['value'], $result);
         $this->assertIsString($result);
     }
 
@@ -301,8 +303,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValueFromArray('value', $array);
         $this->assertIsString($result);
-        $this->assertTrue($array['value'] === $result);
-        $this->assertEquals($array['value'], $result);
+        $this->assertSame($array['value'], $result);
+        $this->assertSame($array['value'], $result);
     }
 
     public function testAssociativeArraySantizieWitTrimMethod(): void
@@ -310,8 +312,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = 'snipershady    ';
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValueFromArray('value', $array, true);
-        $this->assertTrue(trim($array['value']) === $result);
+        $result = $ept->getTypedValueFromArray('value', $array, trim: true);
+        $this->assertSame($result, trim($array['value']));
         $this->assertEquals(trim($array['value']), $result);
         $this->assertIsString($result);
     }
@@ -321,8 +323,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = '1';
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValueFromArray('value', $array, true, true);
-        $this->assertTrue(trim($array['value']) === $result);
+        $result = $ept->getTypedValueFromArray('value', $array, trim: true, forceString: true);
+        $this->assertSame($result, trim($array['value']));
         $this->assertEquals(trim($array['value']), $result);
         $this->assertIsString($result);
     }
@@ -332,9 +334,9 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $value = '1 ';
         $array['value'] = $value;
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValueFromArray('value', $array, true);
-        $this->assertTrue((int) $array['value'] === $result);
-        $this->assertEquals((int) $array['value'], $result);
+        $result = $ept->getTypedValueFromArray('value', $array, trim: true);
+        $this->assertSame($result, (int) $array['value']);
+        $this->assertSame((int) $array['value'], $result);
         $this->assertIsInt($result);
     }
 
@@ -342,8 +344,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = 'asd"><Svg Only=1 OnLoad=confirm(document.cookie)>';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, true, true);
-        $this->assertTrue($value !== $result);
+        $result = $ept->getTypedValue($value, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertNotSame($value, $result);
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
     }
@@ -352,8 +354,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '><svg/onload=confirm(1)';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, true, true);
-        $this->assertTrue($value !== $result);
+        $result = $ept->getTypedValue($value, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertNotSame($value, $result);
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
     }
@@ -362,33 +364,33 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = 'asd"><Svg Only=1 OnLoad=confirm(document.cookie)>';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, true, true);
-        $this->assertTrue($value !== $result);
+        $result = $ept->getTypedValue($value, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertNotSame($value, $result);
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
         $expected = 'asd';
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $result);
     }
 
     public function testStringWithHTMLFour(): void
     {
         $value = '<p>Ciao <b>Stefano</b>! <script>alert("XSS");</script> &copy;</p>';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, true, true);
-        $this->assertTrue($value !== $result);
+        $result = $ept->getTypedValue($value, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertNotSame($value, $result);
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
         $expected = 'Ciao Stefano! alertXSS; ©';
-        $this->assertEquals($expected, $result);
+        $this->assertSame($expected, $result);
     }
 
     public function testPlainStringWithHtmlSanitizer(): void
     {
         $value = "C'era una volta, cappuccetto rosso. E c'era anche un lupo cattivo!";
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, true, true);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $result = $ept->getTypedValue($value, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
     }
 
@@ -396,12 +398,12 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = 'asd"><Svg Only=1 OnLoad=confirm(document.cookie)>';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, true);
-        $this->assertTrue($value === $result);
-        $this->assertEquals($value, $result);
+        $result = $ept->getTypedValue($value, trim: true, forceString: true);
+        $this->assertSame($value, $result);
+        $this->assertSame($value, $result);
         $this->assertIsString($result);
-        $result = $ept->getTypedValue($value, true, true, true);
-        $this->assertTrue($value !== $result);
+        $result = $ept->getTypedValue($value, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertNotSame($value, $result);
         $this->assertNotEquals($value, $result);
         $this->assertIsString($result);
     }
@@ -414,7 +416,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
             ],
         ];
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value['key1'], true);
+        $result = $ept->getTypedValue($value['key1'], trim: true);
         // test is array
         $this->assertIsArray($result);
         // test expected result
@@ -457,7 +459,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '1';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, false, true);
+        $result = $ept->getTypedValue($value, trim: false, forceString: true);
         $this->assertIsString($result);
         $this->assertSame($value, $result);
     }
@@ -469,7 +471,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '3.14';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, false, true);
+        $result = $ept->getTypedValue($value, trim: false, forceString: true);
         $this->assertIsString($result);
         $this->assertSame($value, $result);
     }
@@ -481,7 +483,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '-42';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, false, true);
+        $result = $ept->getTypedValue($value, trim: false, forceString: true);
         $this->assertIsString($result);
         $this->assertSame($value, $result);
     }
@@ -493,7 +495,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '0';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, false, true);
+        $result = $ept->getTypedValue($value, trim: false, forceString: true);
         $this->assertIsString($result);
         $this->assertSame($value, $result);
     }
@@ -583,7 +585,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testGetTypedValueFromArrayNullArrayReturnsNull(): void
     {
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValueFromArray('key', null);
+        $result = $ept->getTypedValueFromArray('key', array: null);
         $this->assertNull($result);
     }
 
@@ -633,7 +635,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         $this->assertIsInt($result['int']);
         $this->assertSame(42, $result['int']);
         $this->assertIsFloat($result['float']);
-        $this->assertSame(3.14, $result['float']);
+        $this->assertEqualsWithDelta(3.14, $result['float'], PHP_FLOAT_EPSILON);
         $this->assertIsString($result['string']);
         $this->assertSame('hello', $result['string']);
         $this->assertNull($result['null']);
@@ -654,8 +656,9 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         ];
 
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($input, false, true);
+        $result = $ept->getTypedValue($input, trim: false, forceString: true);
 
+        $this->assertIsArray($result);
         $this->assertIsString($result['int_string']);
         $this->assertSame('42', $result['int_string']);
         $this->assertIsString($result['float_string']);
@@ -674,7 +677,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = "C'era una volta, cappuccetto rosso.";
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, false, false, true);
+        $result = $ept->getTypedValue($value, trim: false, forceString: false, sanitizeHtml: true);
         $this->assertIsString($result);
         $this->assertSame($value, $result);
     }
@@ -692,7 +695,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '&lt;script&gt;alert(1)&lt;/script&gt;';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, false, false, true);
+        $result = $ept->getTypedValue($value, trim: false, forceString: false, sanitizeHtml: true);
         $this->assertIsString($result);
         $this->assertStringNotContainsString('<', $result);
         $this->assertStringNotContainsString('>', $result);
@@ -710,7 +713,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '<strong>Hello</strong>';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, false, true);
+        $result = $ept->getTypedValue($value, trim: true, forceString: false, sanitizeHtml: true);
         $this->assertIsString($result);
         $this->assertSame('Hello', $result);
     }
@@ -722,7 +725,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     {
         $value = '  <b>word</b>  ';
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue($value, true, false, true);
+        $result = $ept->getTypedValue($value, trim: true, forceString: false, sanitizeHtml: true);
         $this->assertIsString($result);
         $this->assertSame('word', $result);
     }
@@ -751,14 +754,14 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testCustomSanitizerIsUsed(): void
     {
         $customSanitizer = new class implements HtmlSanitizerServiceInterface {
-            public function sanitize($string)
+            public function sanitize(string $string): string
             {
                 return 'SANITIZED';
             }
         };
 
         $ept = new EffectivePrimitiveTypeIdentifierService($customSanitizer);
-        $result = $ept->getTypedValue('<b>anything</b>', false, false, true);
+        $result = $ept->getTypedValue('<b>anything</b>', trim: false, forceString: false, sanitizeHtml: true);
         $this->assertSame('SANITIZED', $result);
     }
 
@@ -768,16 +771,10 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
      */
     public function testCustomSanitizerNotCalledWhenSanitizeHtmlIsFalse(): void
     {
-        $called = false;
-        $customSanitizer = new class($called) implements HtmlSanitizerServiceInterface {
-            private $called;
+        $customSanitizer = new class implements HtmlSanitizerServiceInterface {
+            public bool $called = false;
 
-            public function __construct(&$called)
-            {
-                $this->called = &$called;
-            }
-
-            public function sanitize($string)
+            public function sanitize(string $string): string
             {
                 $this->called = true;
 
@@ -786,8 +783,8 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
         };
 
         $ept = new EffectivePrimitiveTypeIdentifierService($customSanitizer);
-        $ept->getTypedValue('hello', false, false, false);
-        $this->assertFalse($called, 'Custom sanitizer must not be invoked when $sanitizeHtml is false.');
+        $ept->getTypedValue('hello', trim: false, forceString: false, sanitizeHtml: false);
+        $this->assertFalse($customSanitizer->called, 'Custom sanitizer must not be invoked when $sanitizeHtml is false.');
     }
 
     /**
@@ -796,7 +793,7 @@ class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testDefaultSanitizerUsedWhenNoConstructorArgument(): void
     {
         $ept = new EffectivePrimitiveTypeIdentifierService();
-        $result = $ept->getTypedValue('<script>alert(1)</script>', false, false, true);
+        $result = $ept->getTypedValue('<script>alert(1)</script>', trim: false, forceString: false, sanitizeHtml: true);
         $this->assertIsString($result);
         $this->assertStringNotContainsString('<', $result);
         $this->assertStringNotContainsString('script', $result);

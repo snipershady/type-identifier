@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Copyright (C) 2025  Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  *
@@ -40,27 +42,26 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
     /**
      * Returns the effective primitive type of a variable.
      *
-     * @param mixed $data         variable to resolve and sanitize
-     * @param bool  $trim         when true, string results are trimmed
-     * @param bool  $forceString  when true, numeric strings are kept as strings
-     * @param bool  $sanitizeHtml when true, HTML/XSS sanitization is applied to strings
+     * @param bool $trim         when true, string results are trimmed
+     * @param bool $forceString  when true, numeric strings are kept as strings
+     * @param bool $sanitizeHtml when true, HTML/XSS sanitization is applied to strings
      *
-     * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false);
+    public function getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
     /**
      * Returns the typed value for a specific key from an arbitrary array.
      *
-     * @param string            $needle       key to look up inside $array
+     * @param int|string        $needle       key to look up inside $array
      * @param array<mixed>|null $array        Source array. Returns null if not an array or key absent.
      * @param bool              $trim         passed through to {@see getTypedValue()}
      * @param bool              $forceString  passed through to {@see getTypedValue()}
      * @param bool              $sanitizeHtml passed through to {@see getTypedValue()}
      *
-     * @return bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValueFromArray($needle, $array, $trim = false, $forceString = false, $sanitizeHtml = false);
+    public function getTypedValueFromArray(int|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
     /**
      * Returns the typed value for a key from the $_POST superglobal.
@@ -70,9 +71,9 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      * @param bool   $forceString  passed through to {@see getTypedValue()}
      * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
      *
-     * @return bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false);
+    public function getTypedValueFromPost(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
     /**
      * Returns the typed value for a key from the $_GET superglobal.
@@ -82,9 +83,9 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      * @param bool   $forceString  passed through to {@see getTypedValue()}
      * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
      *
-     * @return bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false);
+    public function getTypedValueFromGet(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
     /**
      * Returns the typed value for a key from the $_COOKIE superglobal.
@@ -94,9 +95,9 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      * @param bool   $forceString  passed through to {@see getTypedValue()}
      * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
      *
-     * @return bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false);
+    public function getTypedValueFromCookie(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
     /**
      * Returns the typed value for a key from the $_SERVER superglobal.
@@ -106,9 +107,9 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      * @param bool   $forceString  passed through to {@see getTypedValue()}
      * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
      *
-     * @return bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false);
+    public function getTypedValueFromServer(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
     /**
      * Returns the typed value for a key from the $_ENV superglobal.
@@ -118,7 +119,7 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      * @param bool   $forceString  passed through to {@see getTypedValue()}
      * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
      *
-     * @return bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false);
+    public function getTypedValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 }

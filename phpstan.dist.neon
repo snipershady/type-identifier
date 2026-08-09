@@ -1,4 +1,21 @@
 parameters:
-    level: 6
+    level: 9
     paths:
         - src/
+        - tests/
+    treatPhpDocTypesAsCertain: false
+    checkMissingCallableSignature: true
+    ignoreErrors:
+        # PHPUnit tests intentionally assert on literal/known-shape inputs to lock in
+        # documented behaviour; PHPStan can statically prove these "always true", but
+        # that is the point of the test, not a defect. Scoped to tests/ only — src/
+        # stays at full level 9 strictness with no suppressions.
+        -
+            identifier: method.alreadyNarrowedType
+            path: tests/
+        -
+            identifier: identical.alwaysTrue
+            path: tests/
+        -
+            identifier: identical.alwaysFalse
+            path: tests/

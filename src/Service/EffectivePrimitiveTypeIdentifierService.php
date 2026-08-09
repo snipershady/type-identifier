@@ -18,6 +18,8 @@
  * Boston, MA 02110-1301 USA.
  */
 
+declare(strict_types=1);
+
 namespace TypeIdentifier\Service;
 
 use TypeIdentifier\Sanitizer\HtmlSanitizerService;
@@ -42,22 +44,20 @@ use TypeIdentifier\Sanitizer\HtmlSanitizerServiceInterface;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiveTypeIdentifierServiceInterface
+final readonly class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiveTypeIdentifierServiceInterface
 {
     /**
      * HTML/XSS sanitizer used when $sanitizeHtml is true.
-     *
-     * @var HtmlSanitizerServiceInterface
      */
-    private $htmlSanitizer;
+    private HtmlSanitizerServiceInterface $htmlSanitizer;
 
     /**
-     * @param HtmlSanitizerServiceInterface|null $htmlSanitizer Custom sanitizer to use.
-     *                                                          When null, HtmlSanitizerService is used.
+     * @param HtmlSanitizerServiceInterface|null $htmlSanitizerService Custom sanitizer to use.
+     *                                                                 When null, HtmlSanitizerService is used.
      */
-    public function __construct($htmlSanitizer = null)
+    public function __construct(?HtmlSanitizerServiceInterface $htmlSanitizerService = null)
     {
-        $this->htmlSanitizer = null !== $htmlSanitizer ? $htmlSanitizer : new HtmlSanitizerService();
+        $this->htmlSanitizer = $htmlSanitizerService ?? new HtmlSanitizerService();
     }
 
     /**
@@ -82,9 +82,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *                            HtmlSanitizerServiceInterface.
      *                            Has no effect on non-string values.
      *
-     * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
      */
-    public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         if (null === $data) {
             return null;
@@ -99,17 +99,18 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
             return $res;
         }
 
+        if (!is_scalar($data)) {
+            return null;
+        }
+
         if (!$forceString && is_bool($data)) {
             return $this->getSanitizedBool($data);
         }
         if (!$forceString && is_numeric($data)) {
             return $this->getSanitizedNumber($data);
         }
-        if ($forceString || is_string($data)) {
-            return $this->getSanitizedString((string) $data, $trim, $sanitizeHtml);
-        }
 
-        return null;
+        return $this->getSanitizedString((string) $data, $trim, $sanitizeHtml);
     }
 
     /**
@@ -119,17 +120,17 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * cast to its effective primitive type via getTypedValue().
      * Returns null when $array is not an array or when the key does not exist.
      *
-     * @param string            $needle       key to look up inside $array
+     * @param int|string        $needle       key to look up inside $array
      * @param array<mixed>|null $array        Source array. If null or not an array, null is returned.
      * @param bool              $trim         passed through to getTypedValue()
      * @param bool              $forceString  passed through to getTypedValue()
      * @param bool              $sanitizeHtml passed through to getTypedValue()
      *
-     * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null the typed value at $needle, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value at $needle, or null if the key is absent
      */
-    public function getTypedValueFromArray($needle, $array, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValueFromArray(int|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
-        return is_array($array) && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml) : null;
+        return null !== $array && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**
@@ -140,9 +141,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
-    public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValueFromPost(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_POST, $_POST, $needle, $trim, $forceString, $sanitizeHtml);
     }
@@ -155,9 +156,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
-    public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValueFromServer(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_SERVER, $_SERVER, $needle, $trim, $forceString, $sanitizeHtml);
     }
@@ -170,9 +171,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
-    public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValueFromGet(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_GET, $_GET, $needle, $trim, $forceString, $sanitizeHtml);
     }
@@ -185,9 +186,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
-    public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValueFromCookie(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_COOKIE, $_COOKIE, $needle, $trim, $forceString, $sanitizeHtml);
     }
@@ -200,9 +201,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
-    public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    public function getTypedValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_ENV, $_ENV, $needle, $trim, $forceString, $sanitizeHtml);
     }
@@ -222,9 +223,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool         $forceString  passed through to getTypedValue()
      * @param bool         $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
-    private function readFromInput($inputType, array &$superglobal, $needle, $trim, $forceString, $sanitizeHtml)
+    private function readFromInput(int $inputType, array &$superglobal, string $needle, bool $trim, bool $forceString, bool $sanitizeHtml): array|bool|int|float|string|null
     {
         // filter_input() (and filter_var() on the fallback path below) only handle
         // scalar values: on an array value they return null/false and would end up
@@ -248,21 +249,11 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
     /**
      * Validates and returns a boolean value.
      *
-     * Selects the appropriate filter constant based on the running PHP version:
-     *  - PHP >= 8.0: FILTER_VALIDATE_BOOL    (canonical name, introduced in 8.0)
-     *  - PHP <  8.0: FILTER_VALIDATE_BOOLEAN (original name, available since 5.2)
-     *
-     * Both constants share the same integer value (258); the branch for the
-     * version NOT running is never evaluated at runtime, so no undefined-constant
-     * error or notice is triggered on either version.
-     *
      * @param bool $value raw boolean value
-     *
-     * @return bool
      */
-    private function getSanitizedBool($value)
+    private function getSanitizedBool(bool $value): bool
     {
-        return filter_var($value, PHP_VERSION_ID >= 80000 ? FILTER_VALIDATE_BOOL : FILTER_VALIDATE_BOOLEAN);
+        return $value;
     }
 
     /**
@@ -271,11 +262,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * Adds 0 to promote a numeric string to its native numeric type, then
      * delegates to the appropriate int or float sanitizer.
      *
-     * @param mixed $value must satisfy is_numeric(); behaviour is undefined otherwise
-     *
-     * @return int|float
+     * @param float|int|numeric-string $value must satisfy is_numeric(); behaviour is undefined otherwise
      */
-    private function getSanitizedNumber($value)
+    private function getSanitizedNumber(float|int|string $value): int|float
     {
         $numericValue = $value + 0;
         if (is_int($numericValue)) {
@@ -292,10 +281,8 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * before casting to int.
      *
      * @param int $value integer value to sanitize
-     *
-     * @return int
      */
-    private function getSanitizedIntValue($value)
+    private function getSanitizedIntValue(int $value): int
     {
         return (int) filter_var($value, FILTER_SANITIZE_NUMBER_INT);
     }
@@ -310,12 +297,10 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * exponent marker and silently truncates the value to something numerically wrong.
      *
      * @param float $value float value to return
-     *
-     * @return float
      */
-    private function getSanitizedFloatValue($value)
+    private function getSanitizedFloatValue(float $value): float
     {
-        return (float) $value;
+        return $value;
     }
 
     /**
@@ -329,10 +314,8 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param string $value        raw string value
      * @param bool   $trim         when true, the result is trimmed
      * @param bool   $sanitizeHtml when true, HTML/XSS sanitization is applied
-     *
-     * @return string
      */
-    private function getSanitizedString($value, $trim = false, $sanitizeHtml = false)
+    private function getSanitizedString(string $value, bool $trim = false, bool $sanitizeHtml = false): string
     {
         $result = $sanitizeHtml ? $this->htmlSanitizer->sanitize($value) : filter_var($value, FILTER_UNSAFE_RAW);
 

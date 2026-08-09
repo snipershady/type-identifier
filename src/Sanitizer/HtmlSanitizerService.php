@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Copyright (C) 2025  Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  *
@@ -41,7 +43,7 @@ final class HtmlSanitizerService implements HtmlSanitizerServiceInterface
      *
      * @var array<string>
      */
-    private static $dangerousPatterns = [
+    private static array $dangerousPatterns = [
         '/\&/',
         '/</',
         '/>/',
@@ -65,7 +67,8 @@ final class HtmlSanitizerService implements HtmlSanitizerServiceInterface
      *
      * @return string sanitized plain-text string
      */
-    public function sanitize($string)
+    #[\Override]
+    public function sanitize(string $string): string
     {
         $stringFiltered = (string) filter_var(
             $string,
