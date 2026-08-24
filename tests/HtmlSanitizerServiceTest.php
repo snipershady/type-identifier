@@ -38,7 +38,7 @@ use TypeIdentifier\Sanitizer\HtmlSanitizerService;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-class HtmlSanitizerServiceTest extends AbstractTestCase
+final class HtmlSanitizerServiceTest extends AbstractTestCase
 {
     /** @var HtmlSanitizerService */
     private $sanitizer;

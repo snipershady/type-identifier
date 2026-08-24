@@ -32,7 +32,7 @@ namespace TypeIdentifier\Tests;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
+final class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
 {
     public function testInputGet(): void
     {
@@ -138,6 +138,9 @@ class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
         $this->assertIsString($response['value']);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function callEntrypoint(string $httpMethodString, ?string $inputParameter = null): array
     {
         $httpMethod = strtoupper($httpMethodString);
