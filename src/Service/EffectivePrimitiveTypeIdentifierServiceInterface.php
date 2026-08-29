@@ -50,6 +50,14 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      */
     public function getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
+    public function getIntValue(mixed $data, bool $trim = false): int;
+
+    public function getStringValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string;
+
+    public function getFloatValue(mixed $data, bool $trim = false): float;
+
+    public function getBoolValue(mixed $data, bool $trim = false): bool;
+
     /**
      * Returns the typed value for a specific key from an arbitrary array.
      *
@@ -122,4 +130,234 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      * @return array<array-key,mixed>|bool|int|float|string|null
      */
     public function getTypedValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
+
+    /**
+     * Returns the int value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromPost()} to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getIntValueFromPost(string $needle, bool $trim = false): int;
+
+    /**
+     * Returns the float value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromPost()} to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getFloatValueFromPost(string $needle, bool $trim = false): float;
+
+    /**
+     * Returns the string value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromPost()} to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_POST
+     * @param bool   $trim         passed through to {@see getTypedValue()}
+     * @param bool   $forceString  passed through to {@see getTypedValue()}
+     * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
+     */
+    public function getStringValueFromPost(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string;
+
+    /**
+     * Returns the bool value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromPost()} to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getBoolValueFromPost(string $needle, bool $trim = false): bool;
+
+    /**
+     * Returns the int value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromGet()} to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getIntValueFromGet(string $needle, bool $trim = false): int;
+
+    /**
+     * Returns the float value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromGet()} to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getFloatValueFromGet(string $needle, bool $trim = false): float;
+
+    /**
+     * Returns the string value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromGet()} to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_GET
+     * @param bool   $trim         passed through to {@see getTypedValue()}
+     * @param bool   $forceString  passed through to {@see getTypedValue()}
+     * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
+     */
+    public function getStringValueFromGet(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string;
+
+    /**
+     * Returns the bool value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromGet()} to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getBoolValueFromGet(string $needle, bool $trim = false): bool;
+
+    /**
+     * Returns the int value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromCookie()} to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getIntValueFromCookie(string $needle, bool $trim = false): int;
+
+    /**
+     * Returns the float value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromCookie()} to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getFloatValueFromCookie(string $needle, bool $trim = false): float;
+
+    /**
+     * Returns the string value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromCookie()} to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_COOKIE
+     * @param bool   $trim         passed through to {@see getTypedValue()}
+     * @param bool   $forceString  passed through to {@see getTypedValue()}
+     * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
+     */
+    public function getStringValueFromCookie(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string;
+
+    /**
+     * Returns the bool value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromCookie()} to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getBoolValueFromCookie(string $needle, bool $trim = false): bool;
+
+    /**
+     * Returns the int value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromServer()} to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getIntValueFromServer(string $needle, bool $trim = false): int;
+
+    /**
+     * Returns the float value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromServer()} to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getFloatValueFromServer(string $needle, bool $trim = false): float;
+
+    /**
+     * Returns the string value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromServer()} to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_SERVER
+     * @param bool   $trim         passed through to {@see getTypedValue()}
+     * @param bool   $forceString  passed through to {@see getTypedValue()}
+     * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
+     */
+    public function getStringValueFromServer(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string;
+
+    /**
+     * Returns the bool value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromServer()} to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getBoolValueFromServer(string $needle, bool $trim = false): bool;
+
+    /**
+     * Returns the int value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromEnv()} to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getIntValueFromEnv(string $needle, bool $trim = false): int;
+
+    /**
+     * Returns the float value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromEnv()} to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getFloatValueFromEnv(string $needle, bool $trim = false): float;
+
+    /**
+     * Returns the string value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromEnv()} to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_ENV
+     * @param bool   $trim         passed through to {@see getTypedValue()}
+     * @param bool   $forceString  passed through to {@see getTypedValue()}
+     * @param bool   $sanitizeHtml passed through to {@see getTypedValue()}
+     */
+    public function getStringValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string;
+
+    /**
+     * Returns the bool value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of {@see getTypedValueFromEnv()} to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to {@see getTypedValue()}
+     */
+    public function getBoolValueFromEnv(string $needle, bool $trim = false): bool;
 }

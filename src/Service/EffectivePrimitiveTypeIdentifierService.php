@@ -84,6 +84,7 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
      *
      * @return array<array-key,mixed>|bool|int|float|string|null
      */
+    #[\Override]
     public function getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         if (null === $data) {
@@ -113,6 +114,32 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
         return $this->getSanitizedString((string) $data, $trim, $sanitizeHtml);
     }
 
+    #[\Override]
+    public function getBoolValue(mixed $data, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    #[\Override]
+    public function getFloatValue(mixed $data, bool $trim = false): float
+    {
+        return (float) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    #[\Override]
+    public function getIntValue(mixed $data, bool $trim = false): int
+    {
+        return (int) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    #[\Override]
+    public function getStringValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValue(data: $data, trim: $trim, forceString: $forceString, sanitizeHtml: $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
     /**
      * Returns the typed value for a specific key from an arbitrary array.
      *
@@ -128,6 +155,7 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
      *
      * @return array<array-key,mixed>|bool|int|float|string|null the typed value at $needle, or null if the key is absent
      */
+    #[\Override]
     public function getTypedValueFromArray(int|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return null !== $array && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml) : null;
@@ -143,6 +171,7 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
      *
      * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
+    #[\Override]
     public function getTypedValueFromPost(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_POST, $_POST, $needle, $trim, $forceString, $sanitizeHtml);
@@ -158,6 +187,7 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
      *
      * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
+    #[\Override]
     public function getTypedValueFromServer(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_SERVER, $_SERVER, $needle, $trim, $forceString, $sanitizeHtml);
@@ -173,6 +203,7 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
      *
      * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
+    #[\Override]
     public function getTypedValueFromGet(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_GET, $_GET, $needle, $trim, $forceString, $sanitizeHtml);
@@ -188,6 +219,7 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
      *
      * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
+    #[\Override]
     public function getTypedValueFromCookie(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_COOKIE, $_COOKIE, $needle, $trim, $forceString, $sanitizeHtml);
@@ -203,9 +235,330 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
      *
      * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
+    #[\Override]
     public function getTypedValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null
     {
         return $this->readFromInput(INPUT_ENV, $_ENV, $needle, $trim, $forceString, $sanitizeHtml);
+    }
+
+    /**
+     * Returns the int value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getIntValueFromPost(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromPost($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getFloatValueFromPost(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromPost($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_POST
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getStringValueFromPost(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromPost($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getBoolValueFromPost(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromPost($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getIntValueFromGet(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromGet($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getFloatValueFromGet(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromGet($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_GET
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getStringValueFromGet(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromGet($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getBoolValueFromGet(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromGet($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getIntValueFromCookie(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromCookie($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getFloatValueFromCookie(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromCookie($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_COOKIE
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getStringValueFromCookie(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromCookie($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getBoolValueFromCookie(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromCookie($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getIntValueFromServer(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromServer($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getFloatValueFromServer(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromServer($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_SERVER
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getStringValueFromServer(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromServer($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getBoolValueFromServer(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromServer($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getIntValueFromEnv(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromEnv($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getFloatValueFromEnv(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromEnv($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_ENV
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getStringValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromEnv($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to getTypedValue()
+     */
+    #[\Override]
+    public function getBoolValueFromEnv(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromEnv($needle, $trim, forceString: false, sanitizeHtml: false);
     }
 
     /**
@@ -241,9 +594,7 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
             return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
         }
 
-        return array_key_exists($needle, $superglobal)
-            ? $this->getTypedValue(filter_var($superglobal[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml)
-            : null;
+        return array_key_exists($needle, $superglobal) ? $this->getTypedValue(filter_var($superglobal[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml) : null;
     }
 
     /**

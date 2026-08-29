@@ -7,8 +7,6 @@ use Rector\Config\RectorConfig;
 use Rector\Naming\Rector\Assign\RenameVariableToMatchMethodCallReturnTypeRector;
 use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
 use Rector\Naming\Rector\ClassMethod\RenameVariableToMatchNewTypeRector;
-use Rector\Php84\Rector\MethodCall\NewMethodCallWithoutParenthesesRector;
-use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\TypeDeclaration\Rector\ClassMethod\StringReturnTypeFromStrictScalarReturnsRector;
 use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromAssignsRector;
@@ -21,7 +19,6 @@ return RectorConfig::configure()
                 ])
                 ->withSkip([
                     NewlineAfterStatementRector::class,
-                    NewMethodCallWithoutParenthesesRector::class,
                     RenamePropertyToMatchTypeRector::class,
                     RenameVariableToMatchMethodCallReturnTypeRector::class,
                     RenameVariableToMatchNewTypeRector::class,
@@ -29,30 +26,31 @@ return RectorConfig::configure()
                     TypedPropertyFromStrictSetUpRector::class,
                     StringReturnTypeFromStrictScalarReturnsRector::class,
                 ])
-        ->withCache(__DIR__ . '/.rector.cache')
-               ->withPreparedSets(
-                   deadCode: true,
-                   codeQuality: true,
-                   codingStyle: true,
-                   typeDeclarations: true,
-                   typeDeclarationDocblocks: true,
-                   privatization: true,
-                   naming: true,
-                   namedArgs: true,
-                   instanceOf: true,
-                   earlyReturn: true,
-                   phpunitCodeQuality: true,
-                   phpunitNarrowAsserts: true,
-                   phpunitMockToStub: true,
-               )
+                ->withCache(__DIR__ . '/.rector.cache')
+                ->withImportNames(
+                    importShortClasses: false,
+                    removeUnusedImports: true,
+                )
+                ->withPreparedSets(
+                    deadCode: true,
+                    codeQuality: true,
+                    codingStyle: true,
+                    typeDeclarations: true,
+                    typeDeclarationDocblocks: true,
+                    privatization: true,
+                    naming: true,
+                    namedArgs: true,
+                    instanceOf: true,
+                    earlyReturn: true,
+                    phpunitCodeQuality: true,
+                    phpunitNarrowAsserts: true,
+                    phpunitMockToStub: true,
+                )
                 ->withAttributesSets(phpunit: true)
                 ->withComposerBased(phpunit: true)
-                ->withSets([
-                   PHPUnitSetList::PHPUNIT_130,
-               ])
                 ->withSets(
                     [
-                        LevelSetList::UP_TO_PHP_84,
+                        LevelSetList::UP_TO_PHP_83,
                     ]
                 )
 ;

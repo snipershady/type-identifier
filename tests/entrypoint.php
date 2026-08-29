@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService;
+
 require_once __DIR__ . '/../vendor/autoload.php';
 header('Content-type:application/json');
 
-$epti = new TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierService();
+$epti = new EffectivePrimitiveTypeIdentifierService();
 $inputServer = $epti->getTypedValueFromServer('HTTP_USER_AGENT');
 
 $requestMethod = $epti->getTypedValueFromServer('REQUEST_METHOD');

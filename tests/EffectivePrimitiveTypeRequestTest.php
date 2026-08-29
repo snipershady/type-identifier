@@ -141,12 +141,13 @@ final class EffectivePrimitiveTypeRequestTest extends AbstractTestCase
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<array-key, mixed> decoded JSON body returned by the test entrypoint
      */
     private function callEntrypoint(string $httpMethodString, ?string $inputParameter = null): array
     {
         $httpMethod = strtoupper($httpMethodString);
         $ch = curl_init();
+        $this->assertNotFalse($ch, 'curl_init() failed to initialise a cURL handle.');
         $url = 'http://endpoint-test/tests/entrypoint.php';
         // $url = 'http://epti.com/entrypoint.php';
         $options = [

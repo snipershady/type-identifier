@@ -84,7 +84,6 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
         $this->assertSame($value, $result);
-        $this->assertEquals($value, $result);
         $this->assertIsBool($result);
     }
 
@@ -113,7 +112,6 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
         $this->assertSame($value, $result);
-        $this->assertEquals($value, $result);
         $this->assertIsBool($result);
     }
 
@@ -123,7 +121,6 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($value);
         $this->assertSame($value, $result);
-        $this->assertEquals($value, $result);
         $this->assertIsBool($result);
     }
 
@@ -233,7 +230,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArrayIntValue(): void
     {
         $value = 1;
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
         $this->assertSame($array['value'], $result);
@@ -244,7 +241,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArrayIntAsCharValue(): void
     {
         $value = '1';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
         $this->assertEquals($array['value'], $result);
@@ -255,7 +252,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArrayIntWithCharValue(): void
     {
         $value = '1a';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
         $this->assertEquals($array['value'], $result);
@@ -266,7 +263,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArrayFloatValue(): void
     {
         $value = '1.1';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
         $this->assertEquals($array['value'], $result);
@@ -277,7 +274,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArrayFloatWithCharValue(): void
     {
         $value = '1.1a';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
         $this->assertSame($array['value'], $result);
@@ -288,7 +285,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArrayStringValue(): void
     {
         $value = 'snipershady';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue($array['value']);
         $this->assertSame($array['value'], $result);
@@ -299,7 +296,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArraySantizieMethod(): void
     {
         $value = 'snipershady';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValueFromArray('value', $array);
         $this->assertIsString($result);
@@ -310,29 +307,27 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
     public function testAssociativeArraySantizieWitTrimMethod(): void
     {
         $value = 'snipershady    ';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValueFromArray('value', $array, trim: true);
         $this->assertSame($result, trim($array['value']));
-        $this->assertEquals(trim($array['value']), $result);
         $this->assertIsString($result);
     }
 
     public function testAssociativeArraySantizieIntAsStringWitTrimMethod(): void
     {
         $value = '1';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValueFromArray('value', $array, trim: true, forceString: true);
         $this->assertSame($result, trim($array['value']));
-        $this->assertEquals(trim($array['value']), $result);
         $this->assertIsString($result);
     }
 
     public function testAssociativeArraySantizieIntWitTrimMethod(): void
     {
         $value = '1 ';
-        $array['value'] = $value;
+        $array = ['value' => $value];
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValueFromArray('value', $array, trim: true);
         $this->assertSame($result, (int) $array['value']);
