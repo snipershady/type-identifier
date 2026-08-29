@@ -23,7 +23,8 @@ When working with HTTP requests, legacy codebases, or loosely-typed data sources
 - ✅ **Whitespace handling**: Optional trimming for clean string values
 - ✅ **Type forcing**: Keep numeric-looking values as strings when needed (IDs, ZIP codes, ...)
 - ✅ **HTML/XSS sanitization**: Optional tag/entity stripping for string results, delegated to an injectable sanitizer
-- ✅ **Array-safe extraction**: Safely retrieve typed values from arrays without `isset()` checks
+- ✅ **Array-safe extraction**: Safely retrieve typed values from arrays without `isset()` checks, with the same `getInt/Float/Bool/StringValueFromArray()` accessors offered for the superglobals
+- ✅ **Bounded recursion**: Nested arrays are walked up to `$maxDepth` (default 64); unbounded and self-referencing structures raise a catchable exception instead of killing the process
 - ✅ **Superglobal helpers**: Built-in typed reads for `$_GET`, `$_POST`, `$_COOKIE`, `$_SERVER`, `$_ENV` (via `filter_input()` with a direct `$_*` fallback)
 - ✅ **Strict & modern**: `declare(strict_types=1)`, `final readonly` service, full native type declarations, analysed at PHPStan `max`
 - ✅ **Zero runtime dependencies**: Lightweight and focused
@@ -352,12 +353,49 @@ Every method is declared on `EffectivePrimitiveTypeIdentifierServiceInterface`.
 | `$trim` | `bool` | `false` | Trim leading/trailing whitespace from a string result |
 | `$forceString` | `bool` | `false` | Keep numeric-looking strings (`"1"`, `"3.14"`) as strings instead of promoting them to `int`/`float` |
 | `$sanitizeHtml` | `bool` | `false` | Strip tags, decode entities and remove dangerous characters from a string result |
+| `$maxDepth` | `int` | `64` | Maximum array nesting level to walk. A scalar is depth 0, a flat array is depth 1. Exposed by the methods that can *return* a nested array; the scalar accessors apply the default |
 
 ### Core
 
-#### `getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null`
+#### `getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null`
 
-Resolves the effective primitive type of `$data`. Arrays are processed recursively (each element is typed individually). Anything that is neither scalar nor array nor `null` returns `null`.
+Resolves the effective primitive type of `$data`. Arrays are processed recursively (each element is typed individually), up to `$maxDepth` nesting levels. Anything that is neither scalar nor array nor `null` returns `null`.
+
+Throws:
+
+| Exception | When |
+| --- | --- |
+| `TypeIdentifier\Exception\MaxDepthExceededException` (`\RuntimeException`) | `$data` nests deeper than `$maxDepth` |
+| `\InvalidArgumentException` | `$maxDepth` is negative |
+
+`MaxDepthExceededException` implements `TypeIdentifier\Exception\TypeIdentifierExceptionInterface`, the marker interface for everything this library throws in response to *data*. Catch it to reject a hostile payload:
+
+```php
+use TypeIdentifier\Exception\TypeIdentifierExceptionInterface;
+
+try {
+    $payload = $ept->getTypedValue(json_decode($body, true));
+} catch (TypeIdentifierExceptionInterface $e) {
+    http_response_code(400);
+    exit('Payload rejected: ' . $e->getMessage());
+}
+```
+
+The negative-`$maxDepth` `\InvalidArgumentException` deliberately stays outside that interface: it signals a bug in *your* code, not bad input, and should not be swallowed by the same catch block.
+
+#### Which methods expose `$maxDepth`
+
+Only the seven whose return type includes `array`, i.e. the ones that can hand a nested structure back to you:
+
+`getTypedValue()`, `getTypedValueFromArray()`, `getTypedValueFromPost()`, `getTypedValueFromGet()`, `getTypedValueFromCookie()`, `getTypedValueFromServer()`, `getTypedValueFromEnv()`.
+
+The typed scalar accessors (`getIntValue()`, `getBoolValueFromPost()`, …) do **not** take it, for the same reason they do not take `$forceString` or `$sanitizeHtml`: they collapse an array to `0`/`1`, `0.0`/`1.0`, `false`/`true` or `""`, so the nesting they walk never reaches the caller and there is nothing to tune. They remain protected by the `DEFAULT_MAX_DEPTH` ceiling.
+
+The default of **64** mirrors PHP's own `max_input_nesting_level` ini setting, the hard cap PHP applies when it builds `$_GET` / `$_POST` / `$_COOKIE` from a request — so the guard never rejects a payload the SAPI was willing to hand you, while still bounding `json_decode()` output (which allows up to 512 levels) and hand-built structures. Raise it explicitly if you knowingly process deeper trusted data:
+
+```php
+$ept->getTypedValue($deepTrustedTree, maxDepth: 256);
+```
 
 ### Typed scalar accessors
 
@@ -372,17 +410,46 @@ Convenience wrappers over `getTypedValue()` that guarantee a single scalar type.
 
 ### Array source
 
-#### `getTypedValueFromArray(int\|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null`
+#### `getTypedValueFromArray(int\|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null`
 
-Returns `getTypedValue()` for `$array[$needle]`, or `null` when `$array` is `null` or the key is absent.
+Returns `getTypedValue()` for `$array[$needle]`, or `null` when `$array` is `null` or the key is absent. `$maxDepth` is forwarded, so a nested value can be bounded per call:
+
+```php
+$tree = $ept->getTypedValueFromArray('tree', $config, maxDepth: 8);
+```
+
+#### Typed array accessors
+
+The counterparts of the superglobal accessors for an arbitrary array source. They carry the `($needle, $array)` pair instead of a lone `$needle` and never return `null`: a `null` `$array`, an absent key and a `null` value all resolve to the zero value of the target type.
+
+| Method | Returns | Missing key / `null` array |
+| --- | --- | --- |
+| `getIntValueFromArray(int\|string $needle, ?array $array, bool $trim = false): int` | `int` | `0` |
+| `getFloatValueFromArray(int\|string $needle, ?array $array, bool $trim = false): float` | `float` | `0.0` |
+| `getBoolValueFromArray(int\|string $needle, ?array $array, bool $trim = false): bool` | `bool` | `false` |
+| `getStringValueFromArray(int\|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string` | `string` | `""` (nested arrays collapse to `""`) |
+
+```php
+$config = ['port' => '8080', 'ratio' => '1.5', 'name' => '  api  ', 'debug' => '0'];
+
+$port  = $ept->getIntValueFromArray('port', $config);              // int(8080)
+$ratio = $ept->getFloatValueFromArray('ratio', $config);           // float(1.5)
+$name  = $ept->getStringValueFromArray('name', $config, trim: true); // string("api")
+$debug = $ept->getBoolValueFromArray('debug', $config);            // bool(false)
+$miss  = $ept->getIntValueFromArray('nope', $config);              // int(0)
+```
 
 ### Superglobal sources
 
 For each of `Post`, `Get`, `Cookie`, `Server`, `Env`:
 
-#### `getTypedValueFrom{Source}(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null`
+#### `getTypedValueFrom{Source}(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null`
 
-Reads `$needle` from the matching superglobal via `filter_input()`, falling back to the `$_*` array (CLI / tests). Returns `null` when the key is absent.
+Reads `$needle` from the matching superglobal via `filter_input()`, falling back to the `$_*` array (CLI / tests). Returns `null` when the key is absent. `$maxDepth` is forwarded, which matters for `field[]`-style inputs that arrive as arrays:
+
+```php
+$tags = $ept->getTypedValueFromPost('tags', maxDepth: 2);
+```
 
 #### Typed superglobal accessors
 
@@ -397,16 +464,47 @@ Example concrete names: `getTypedValueFromServer()`, `getIntValueFromPost()`, `g
 
 ## Testing
 
-If you have a development environment set up with PHP 8.4, set the host file ‘endpoint-test’ to point to 127.0.0.1 and run
+The suite is split in two, because half of `readFromInput()` cannot be reached from CLI.
 
 ```bash
-composer test
+composer test              # everything; the integration tests skip if no endpoint answers
+composer test:unit         # unit only, no I/O, runnable anywhere
+composer test:integration  # requires a live endpoint (see below)
 ```
-Otherwise, use the docker found in the project that sets up the environment and runs the test suite, executing  
+
+### Why an integration suite exists
+
+`getTypedValueFrom{Get,Post,Server,…}()` reads the SAPI input stream with `filter_input()` and only falls back to the `$_*` array when that returns `null`. Under CLI `filter_input()` **always** returns `null`, so a pure unit suite exercises the fallback and never the branch that actually runs in production. The integration tests drive `tests/entrypoint.php` over real HTTP to cover it.
+
+Covered over a real request: `$_GET` and `$_POST` (query string / post fields), `$_SERVER` (fed by `X-Test-*` headers) and `$_COOKIE` (fed through `CURLOPT_COOKIE`) — each with its untyped `getTypedValueFrom*()` read and all four typed accessors.
+
+They go one step further: with the `X-Test-Sapi-Only` header the endpoint empties the superglobal entries before reading, which disarms the fallback — a value that still comes back can only have been read by `filter_input()`. That turns "the SAPI branch is covered" from an assumption into an assertion.
+
+> Note: the branch executes in the web-server process, which the CLI coverage driver cannot observe, so it does not show up in the `--coverage-text` figures. The `X-Test-Sapi-Only` tests are what actually pin it down.
+
+### Running the integration suite
+
+Against PHP's built-in server, no docker needed:
+
+```bash
+php -S 127.0.0.1:8080 -t . &
+TYPEIDENTIFIER_ENDPOINT=http://127.0.0.1:8080/tests/entrypoint.php composer test:integration
+```
+
+Or with the bundled docker-compose stack, which serves the endpoint on the `endpoint-test` host (the default when `TYPEIDENTIFIER_ENDPOINT` is unset):
 
 ```bash
 docker compose run --rm --remove-orphans --build do-tests && docker compose down
 ```
+
+When nothing answers, the integration tests skip themselves so `composer test` stays green with no server around. CI runs them with `--fail-on-skipped`, so a missing endpoint turns the build red instead of quietly leaving the SAPI paths untested.
+
+### What CI runs
+
+| Job | PHP | Steps |
+| --- | --- | --- |
+| `quality` | 8.3 | `composer validate --strict`, PHPStan `max`, PHP-CS-Fixer, Rector |
+| `test` | 8.3, 8.4 | unit suite, then integration suite against `php -S` with `--fail-on-skipped`, then coverage |
 
 ## License
 

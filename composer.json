@@ -1,7 +1,11 @@
 {
     "name": "snipershady/typeidentifier",
     "description": "Free service to identify primitive type of a variable",
-    "keywords": ["strict type", "type", "primitive"],
+    "keywords": [
+        "strict type",
+        "type",
+        "primitive"
+    ],
     "homepage": "https://www.spinfo.it",
     "type": "library",
     "license": "GPL-2.0-only",
@@ -17,7 +21,7 @@
     "autoload": {
         "psr-4": {
             "TypeIdentifier\\": "src/"
-        }       
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -56,17 +60,21 @@
         ],
         "post-update-cmd": [
             "echo \"\n✅ Dependencies updated. Run 'composer quality' to apply code quality fixes.\n\""
-        ]
+        ],
+        "test:unit": "vendor/bin/phpunit --testsuite unit",
+        "test:integration": "vendor/bin/phpunit --testsuite integration"
     },
     "scripts-descriptions": {
-        "test": "Run PHPUnit tests",
+        "test": "Run the whole PHPUnit suite (integration tests skip without a live endpoint)",
         "rector": "Run Rector to refactor code",
         "rector-dry": "Run Rector in dry-run mode (preview changes without applying)",
         "cs-fix": "Fix code style issues with PHP-CS-Fixer",
         "cs-check": "Check code style without making changes",
         "phpstan": "Run PHPStan static analysis",
         "quality": "Run all quality tools (Rector + PHP-CS-Fixer)",
-        "quality-check": "Check code quality without making changes (dry-run mode)"
+        "quality-check": "Check code quality without making changes (dry-run mode)",
+        "test:unit": "Run the unit suite only: no I/O, runnable anywhere",
+        "test:integration": "Run the integration suite against TYPEIDENTIFIER_ENDPOINT (defaults to the docker-compose endpoint)"
     },
     "config": {
         "optimize-autoloader": true,
