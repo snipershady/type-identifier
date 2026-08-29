@@ -50,12 +50,51 @@ interface EffectivePrimitiveTypeIdentifierServiceInterface
      */
     public function getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): array|bool|int|float|string|null;
 
+    /**
+     * Casts the result of {@see getTypedValue()} to int.
+     *
+     * $forceString and $sanitizeHtml are not accepted: they cannot change an
+     * integer outcome. null, non-numeric strings and the empty array resolve to
+     * 0; a non-empty array resolves to 1; a float is truncated towards zero.
+     *
+     * @param bool $trim when true, a string value is trimmed before the cast
+     */
     public function getIntValue(mixed $data, bool $trim = false): int;
 
+    /**
+     * Casts the result of {@see getTypedValue()} to string.
+     *
+     * Keeps the full flag set because each one still shapes a string result.
+     * An array value (e.g. from "field[]" input) yields an empty string rather
+     * than the literal "Array"; null yields an empty string.
+     *
+     * @param bool $trim         when true, the string result is trimmed
+     * @param bool $forceString  when true, numeric strings are kept as-is instead of being re-cast
+     * @param bool $sanitizeHtml when true, HTML/XSS sanitization is applied to the string
+     */
     public function getStringValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string;
 
+    /**
+     * Casts the result of {@see getTypedValue()} to float.
+     *
+     * $forceString and $sanitizeHtml are not accepted: they cannot change a
+     * float outcome. null, non-numeric strings and the empty array resolve to
+     * 0.0; a non-empty array resolves to 1.0.
+     *
+     * @param bool $trim when true, a string value is trimmed before the cast
+     */
     public function getFloatValue(mixed $data, bool $trim = false): float;
 
+    /**
+     * Casts the result of {@see getTypedValue()} to bool.
+     *
+     * $forceString and $sanitizeHtml are not accepted: they cannot change a
+     * boolean outcome. PHP truthiness is applied to the typed value, so 0, 0.0,
+     * "0", "", null and [] give false while every other value — including the
+     * non-empty string "false" — gives true.
+     *
+     * @param bool $trim when true, a string value is trimmed before the cast
+     */
     public function getBoolValue(mixed $data, bool $trim = false): bool;
 
     /**

@@ -114,24 +114,67 @@ final readonly class EffectivePrimitiveTypeIdentifierService implements Effectiv
         return $this->getSanitizedString((string) $data, $trim, $sanitizeHtml);
     }
 
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to bool.
+     *
+     * $forceString and $sanitizeHtml are pinned to false: neither can change a
+     * boolean outcome. PHP truthiness is applied to the typed value, so 0, 0.0,
+     * "0", "", null and [] return false while every other value — including the
+     * non-empty string "false" — returns true.
+     *
+     * @param mixed $data variable to resolve
+     * @param bool  $trim when true, a string value is trimmed before the cast
+     */
     #[\Override]
     public function getBoolValue(mixed $data, bool $trim = false): bool
     {
         return (bool) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
     }
 
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to float.
+     *
+     * $forceString and $sanitizeHtml are pinned to false: neither can change a
+     * float outcome. null, non-numeric strings and the empty array return 0.0;
+     * a non-empty array returns 1.0.
+     *
+     * @param mixed $data variable to resolve
+     * @param bool  $trim when true, a string value is trimmed before the cast
+     */
     #[\Override]
     public function getFloatValue(mixed $data, bool $trim = false): float
     {
         return (float) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
     }
 
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to int.
+     *
+     * $forceString and $sanitizeHtml are pinned to false: neither can change an
+     * integer outcome. null, non-numeric strings and the empty array return 0;
+     * a non-empty array returns 1; a float is truncated towards zero.
+     *
+     * @param mixed $data variable to resolve
+     * @param bool  $trim when true, a string value is trimmed before the cast
+     */
     #[\Override]
     public function getIntValue(mixed $data, bool $trim = false): int
     {
         return (int) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
     }
 
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to string.
+     *
+     * Keeps the full flag set because each one still shapes a string result.
+     * An array value (e.g. from "field[]" input) returns an empty string rather
+     * than the literal "Array"; null returns an empty string.
+     *
+     * @param mixed $data         variable to resolve
+     * @param bool  $trim         when true, the string result is trimmed
+     * @param bool  $forceString  when true, numeric strings are kept as-is instead of being re-cast
+     * @param bool  $sanitizeHtml when true, HTML/XSS sanitization is applied to the string
+     */
     #[\Override]
     public function getStringValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
     {
