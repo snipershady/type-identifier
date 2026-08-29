@@ -41,6 +41,7 @@ use TypeIdentifier\Service\EffectivePrimitiveTypeIdentifierServiceInterface;
  *  - $forceString = true                  → numeric strings kept as string
  *  - $sanitizeHtml = true                 → HTML/XSS characters stripped
  *  - getTypedValueFromArray edge cases    → missing key, null source array
+ *  - Non-scalar objects                   → always resolved to null
  *
  * @example ./vendor/bin/phpunit tests/EffectivePrimitiveTypeTest.php
  * @example ./vendor/bin/phpunit tests/EffectivePrimitiveTypeTest.php --colors="auto" --debug
@@ -659,6 +660,117 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
         $this->assertIsString($result['float_string']);
         $this->assertSame('3.14', $result['float_string']);
         $this->assertIsString($result['plain_string']);
+    }
+
+    // -------------------------------------------------------------------------
+    // Non-scalar object handling
+    // -------------------------------------------------------------------------
+
+    /**
+     * A plain object (not Stringable) must resolve to null, regardless of flags,
+     * because getTypedValue() only handles null, arrays and scalars.
+     */
+    public function testPlainObjectResolvesToNull(): void
+    {
+        $object = new \stdClass();
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $this->assertNull($ept->getTypedValue($object));
+    }
+
+    /**
+     * A plain object (not Stringable) must resolve to null even when $forceString
+     * is true: the non-scalar guard runs before any string cast, so no
+     * "Object could not be converted to string" Error is raised.
+     */
+    public function testPlainObjectWithForceStringResolvesToNullWithoutError(): void
+    {
+        $object = new \stdClass();
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($object, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertNull($result);
+    }
+
+    /**
+     * A Stringable object must resolve to null, not to the value returned by its
+     * __toString(): only genuine scalars go through the string path.
+     */
+    public function testStringableObjectResolvesToNull(): void
+    {
+        $object = new class {
+            public function __toString(): string
+            {
+                return 'iamobject';
+            }
+        };
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $this->assertNull($ept->getTypedValue($object));
+    }
+
+    /**
+     * A Stringable object must resolve to null even when $forceString is true;
+     * its __toString() output must never leak into the result.
+     */
+    public function testStringableObjectWithForceStringResolvesToNull(): void
+    {
+        $object = new class {
+            public function __toString(): string
+            {
+                return 'iamobject';
+            }
+        };
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($object, trim: true, forceString: true, sanitizeHtml: true);
+        $this->assertNull($result);
+        $this->assertNotSame('iamobject', $result);
+    }
+
+    /**
+     * A closure is a non-scalar object and must resolve to null.
+     */
+    public function testClosureResolvesToNull(): void
+    {
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $this->assertNull($ept->getTypedValue(static fn (): string => 'x', forceString: true));
+    }
+
+    /**
+     * Objects nested inside an array must be resolved to null element by element,
+     * leaving the scalar siblings untouched.
+     */
+    public function testArrayWithObjectValuesResolvesObjectsToNull(): void
+    {
+        $stringable = new class {
+            public function __toString(): string
+            {
+                return 'x';
+            }
+        };
+        $input = [
+            'object' => new \stdClass(),
+            'stringable' => $stringable,
+            'string' => 'keep',
+            'int' => '7',
+        ];
+
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValue($input, forceString: true);
+
+        $this->assertIsArray($result);
+        $this->assertNull($result['object']);
+        $this->assertNull($result['stringable']);
+        $this->assertSame('keep', $result['string']);
+        $this->assertSame('7', $result['int']);
+    }
+
+    /**
+     * getTypedValueFromArray() must return null when the value stored under the
+     * key is a non-scalar object.
+     */
+    public function testGetTypedValueFromArrayWithObjectValueReturnsNull(): void
+    {
+        $ept = new EffectivePrimitiveTypeIdentifierService();
+        $result = $ept->getTypedValueFromArray('key', ['key' => new \stdClass()], forceString: true);
+        $this->assertNull($result);
     }
 
     // -------------------------------------------------------------------------
