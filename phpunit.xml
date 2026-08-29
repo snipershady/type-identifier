@@ -2,12 +2,37 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
-         colors="true">
+         colors="true"
+         failOnWarning="true"
+         failOnRisky="true"
+         failOnNotice="true"
+         failOnDeprecation="true">
 
     <testsuites>
-        <testsuite name="TypeIdentifier Test Suite">
+        <!-- Pure unit tests: no I/O, runnable anywhere. -->
+        <testsuite name="unit">
             <file>tests/EffectivePrimitiveTypeTest.php</file>
+            <file>tests/EffectivePrimitiveTypeWrapperTest.php</file>
             <file>tests/HtmlSanitizerServiceTest.php</file>
+            <file>tests/MaxDepthTest.php</file>
+        </testsuite>
+
+        <!--
+            Integration tests: they drive tests/entrypoint.php over a real HTTP
+            request, which is the only way to exercise the filter_input() branch
+            of readFromInput() for INPUT_GET / INPUT_POST / INPUT_SERVER. Under
+            CLI filter_input() always returns null and only the $_* fallback runs.
+
+            They skip themselves when no endpoint is reachable, so a plain
+            `composer test` still works with no server around. CI runs this suite
+            with the fail-on-skipped flag, so a silently missing endpoint turns
+            the build red instead of green.
+
+            Point TYPEIDENTIFIER_ENDPOINT at the entrypoint to override the
+            docker-compose default (http://endpoint-test/tests/entrypoint.php).
+        -->
+        <testsuite name="integration">
+            <file>tests/EffectivePrimitiveTypeRequestTest.php</file>
         </testsuite>
     </testsuites>
 

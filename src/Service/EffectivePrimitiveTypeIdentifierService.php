@@ -18,8 +18,11 @@
  * Boston, MA 02110-1301 USA.
  */
 
+declare(strict_types=1);
+
 namespace TypeIdentifier\Service;
 
+use TypeIdentifier\Exception\MaxDepthExceededException;
 use TypeIdentifier\Sanitizer\HtmlSanitizerService;
 use TypeIdentifier\Sanitizer\HtmlSanitizerServiceInterface;
 
@@ -42,22 +45,20 @@ use TypeIdentifier\Sanitizer\HtmlSanitizerServiceInterface;
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiveTypeIdentifierServiceInterface
+final readonly class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiveTypeIdentifierServiceInterface
 {
     /**
      * HTML/XSS sanitizer used when $sanitizeHtml is true.
-     *
-     * @var HtmlSanitizerServiceInterface
      */
-    private $htmlSanitizer;
+    private HtmlSanitizerServiceInterface $htmlSanitizer;
 
     /**
-     * @param HtmlSanitizerServiceInterface|null $htmlSanitizer Custom sanitizer to use.
-     *                                                          When null, HtmlSanitizerService is used.
+     * @param HtmlSanitizerServiceInterface|null $htmlSanitizerService Custom sanitizer to use.
+     *                                                                 When null, HtmlSanitizerService is used.
      */
-    public function __construct($htmlSanitizer = null)
+    public function __construct(?HtmlSanitizerServiceInterface $htmlSanitizerService = null)
     {
-        $this->htmlSanitizer = null !== $htmlSanitizer ? $htmlSanitizer : new HtmlSanitizerService();
+        $this->htmlSanitizer = $htmlSanitizerService ?? new HtmlSanitizerService();
     }
 
     /**
@@ -72,6 +73,11 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      *   5. string -> string (optionally trimmed and/or HTML-sanitized)
      *   6. anything else -> null
      *
+     * Arrays are walked at most $maxDepth levels deep; a structure that nests
+     * deeper — including a self-referencing array, which would otherwise recurse
+     * until the process dies on a non-catchable "Allowed memory size exhausted"
+     * fatal error — raises a MaxDepthExceededException.
+     *
      * @param mixed $data         variable to resolve and sanitize
      * @param bool  $trim         When true, the returned string is trimmed of leading/trailing whitespace.
      *                            Has no effect on non-string values.
@@ -81,35 +87,104 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool  $sanitizeHtml When true, the string is sanitized via the injected
      *                            HtmlSanitizerServiceInterface.
      *                            Has no effect on non-string values.
+     * @param int   $maxDepth     Maximum array nesting level to walk. A scalar is depth 0, a flat
+     *                            array is depth 1, ['a' => ['b' => 1]] is depth 2. Defaults to
+     *                            self::DEFAULT_MAX_DEPTH (64), the same cap PHP applies to request
+     *                            superglobals via max_input_nesting_level. Must be >= 0; the check
+     *                            is enforced at runtime rather than only by static analysis because
+     *                            the value typically comes from configuration, not from a literal.
+     *                            Past that boundary the private worker takes it as int<0, max>.
      *
-     * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null
+     * @return array<array-key,mixed>|bool|int|float|string|null
+     *
+     * @throws \InvalidArgumentException if $maxDepth is negative
+     * @throws MaxDepthExceededException if $data nests deeper than $maxDepth
      */
-    public function getTypedValue($data, $trim = false, $forceString = false, $sanitizeHtml = false)
+    #[\Override]
+    public function getTypedValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null
     {
-        if (null === $data) {
-            return null;
+        if ($maxDepth < 0) {
+            throw new \InvalidArgumentException(sprintf('$maxDepth must be greater than or equal to 0, %d given.', $maxDepth));
         }
 
-        if (is_array($data)) {
-            $res = [];
-            foreach ($data as $key => $value) {
-                $res[$key] = $this->getTypedValue($value, $trim, $forceString, $sanitizeHtml);
-            }
+        return $this->resolve($data, $trim, $forceString, $sanitizeHtml, $maxDepth, 0);
+    }
 
-            return $res;
-        }
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to bool.
+     *
+     * $forceString and $sanitizeHtml are pinned to false: neither can change a
+     * boolean outcome. PHP truthiness is applied to the typed value, so 0, 0.0,
+     * "0", "", null and [] return false while every other value — including the
+     * non-empty string "false" — returns true.
+     *
+     * @param mixed $data variable to resolve
+     * @param bool  $trim when true, a string value is trimmed before the cast
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getBoolValue(mixed $data, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
+    }
 
-        if (!$forceString && is_bool($data)) {
-            return $this->getSanitizedBool($data);
-        }
-        if (!$forceString && is_numeric($data)) {
-            return $this->getSanitizedNumber($data);
-        }
-        if ($forceString || is_string($data)) {
-            return $this->getSanitizedString((string) $data, $trim, $sanitizeHtml);
-        }
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to float.
+     *
+     * $forceString and $sanitizeHtml are pinned to false: neither can change a
+     * float outcome. null, non-numeric strings and the empty array return 0.0;
+     * a non-empty array returns 1.0.
+     *
+     * @param mixed $data variable to resolve
+     * @param bool  $trim when true, a string value is trimmed before the cast
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getFloatValue(mixed $data, bool $trim = false): float
+    {
+        return (float) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
+    }
 
-        return null;
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to int.
+     *
+     * $forceString and $sanitizeHtml are pinned to false: neither can change an
+     * integer outcome. null, non-numeric strings and the empty array return 0;
+     * a non-empty array returns 1; a float is truncated towards zero.
+     *
+     * @param mixed $data variable to resolve
+     * @param bool  $trim when true, a string value is trimmed before the cast
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getIntValue(mixed $data, bool $trim = false): int
+    {
+        return (int) $this->getTypedValue(data: $data, trim: $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Convenience wrapper that casts the result of getTypedValue() to string.
+     *
+     * Keeps the full flag set because each one still shapes a string result.
+     * An array value (e.g. from "field[]" input) returns an empty string rather
+     * than the literal "Array"; null returns an empty string.
+     *
+     * @param mixed $data         variable to resolve
+     * @param bool  $trim         when true, the string result is trimmed
+     * @param bool  $forceString  when true, numeric strings are kept as-is instead of being re-cast
+     * @param bool  $sanitizeHtml when true, HTML/XSS sanitization is applied to the string
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getStringValue(mixed $data, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValue(data: $data, trim: $trim, forceString: $forceString, sanitizeHtml: $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
     }
 
     /**
@@ -119,17 +194,99 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * cast to its effective primitive type via getTypedValue().
      * Returns null when $array is not an array or when the key does not exist.
      *
-     * @param string            $needle       key to look up inside $array
+     * @param int|string        $needle       key to look up inside $array
      * @param array<mixed>|null $array        Source array. If null or not an array, null is returned.
      * @param bool              $trim         passed through to getTypedValue()
      * @param bool              $forceString  passed through to getTypedValue()
      * @param bool              $sanitizeHtml passed through to getTypedValue()
+     * @param int               $maxDepth     passed through to getTypedValue()
      *
-     * @return array<bool|int|float|string|null,bool|int|float|string|null>|bool|int|float|string|null the typed value at $needle, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value at $needle, or null if the key is absent
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than $maxDepth
      */
-    public function getTypedValueFromArray($needle, $array, $trim = false, $forceString = false, $sanitizeHtml = false)
+    #[\Override]
+    public function getTypedValueFromArray(int|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null
     {
-        return is_array($array) && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml) : null;
+        return null !== $array && array_key_exists($needle, $array) ? $this->getTypedValue($array[$needle], $trim, $forceString, $sanitizeHtml, $maxDepth) : null;
+    }
+
+    /**
+     * Returns the int value for a key from an arbitrary array.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromArray() to int.
+     * A null $array, an absent key and non-numeric values all resolve to 0.
+     *
+     * @param int|string        $needle key to look up inside $array
+     * @param array<mixed>|null $array  Source array. If null, 0 is returned.
+     * @param bool              $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getIntValueFromArray(int|string $needle, ?array $array, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromArray($needle, $array, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from an arbitrary array.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromArray() to float.
+     * A null $array, an absent key and non-numeric values all resolve to 0.0.
+     *
+     * @param int|string        $needle key to look up inside $array
+     * @param array<mixed>|null $array  Source array. If null, 0.0 is returned.
+     * @param bool              $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getFloatValueFromArray(int|string $needle, ?array $array, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromArray($needle, $array, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from an arbitrary array.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromArray() to string.
+     * A null $array and an absent key resolve to an empty string; a nested array
+     * value collapses to "" rather than to the literal "Array".
+     *
+     * @param int|string        $needle       key to look up inside $array
+     * @param array<mixed>|null $array        Source array. If null, "" is returned.
+     * @param bool              $trim         passed through to getTypedValue()
+     * @param bool              $forceString  passed through to getTypedValue()
+     * @param bool              $sanitizeHtml passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getStringValueFromArray(int|string $needle, ?array $array, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromArray($needle, $array, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from an arbitrary array.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromArray() to bool.
+     * A null $array and an absent key resolve to false. PHP truthiness is applied,
+     * so 0, 0.0, "0", "" and [] give false while the non-empty string "false" gives true.
+     *
+     * @param int|string        $needle key to look up inside $array
+     * @param array<mixed>|null $array  Source array. If null, false is returned.
+     * @param bool              $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getBoolValueFromArray(int|string $needle, ?array $array, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromArray($needle, $array, $trim, forceString: false, sanitizeHtml: false);
     }
 
     /**
@@ -139,12 +296,16 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $trim         passed through to getTypedValue()
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
+     * @param int    $maxDepth     passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than $maxDepth
      */
-    public function getTypedValueFromPost($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    #[\Override]
+    public function getTypedValueFromPost(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null
     {
-        return $this->readFromInput(INPUT_POST, $_POST, $needle, $trim, $forceString, $sanitizeHtml);
+        return $this->readFromInput(INPUT_POST, $_POST, $needle, $trim, $forceString, $sanitizeHtml, $maxDepth);
     }
 
     /**
@@ -154,12 +315,16 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $trim         passed through to getTypedValue()
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
+     * @param int    $maxDepth     passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than $maxDepth
      */
-    public function getTypedValueFromServer($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    #[\Override]
+    public function getTypedValueFromServer(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null
     {
-        return $this->readFromInput(INPUT_SERVER, $_SERVER, $needle, $trim, $forceString, $sanitizeHtml);
+        return $this->readFromInput(INPUT_SERVER, $_SERVER, $needle, $trim, $forceString, $sanitizeHtml, $maxDepth);
     }
 
     /**
@@ -169,12 +334,16 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $trim         passed through to getTypedValue()
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
+     * @param int    $maxDepth     passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than $maxDepth
      */
-    public function getTypedValueFromGet($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    #[\Override]
+    public function getTypedValueFromGet(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null
     {
-        return $this->readFromInput(INPUT_GET, $_GET, $needle, $trim, $forceString, $sanitizeHtml);
+        return $this->readFromInput(INPUT_GET, $_GET, $needle, $trim, $forceString, $sanitizeHtml, $maxDepth);
     }
 
     /**
@@ -184,12 +353,16 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $trim         passed through to getTypedValue()
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
+     * @param int    $maxDepth     passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than $maxDepth
      */
-    public function getTypedValueFromCookie($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    #[\Override]
+    public function getTypedValueFromCookie(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null
     {
-        return $this->readFromInput(INPUT_COOKIE, $_COOKIE, $needle, $trim, $forceString, $sanitizeHtml);
+        return $this->readFromInput(INPUT_COOKIE, $_COOKIE, $needle, $trim, $forceString, $sanitizeHtml, $maxDepth);
     }
 
     /**
@@ -199,12 +372,427 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool   $trim         passed through to getTypedValue()
      * @param bool   $forceString  passed through to getTypedValue()
      * @param bool   $sanitizeHtml passed through to getTypedValue()
+     * @param int    $maxDepth     passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than $maxDepth
      */
-    public function getTypedValueFromEnv($needle, $trim = false, $forceString = false, $sanitizeHtml = false)
+    #[\Override]
+    public function getTypedValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false, int $maxDepth = self::DEFAULT_MAX_DEPTH): array|bool|int|float|string|null
     {
-        return $this->readFromInput(INPUT_ENV, $_ENV, $needle, $trim, $forceString, $sanitizeHtml);
+        return $this->readFromInput(INPUT_ENV, $_ENV, $needle, $trim, $forceString, $sanitizeHtml, $maxDepth);
+    }
+
+    /**
+     * Returns the int value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getIntValueFromPost(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromPost($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getFloatValueFromPost(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromPost($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_POST
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getStringValueFromPost(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromPost($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_POST superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromPost() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_POST
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getBoolValueFromPost(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromPost($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getIntValueFromGet(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromGet($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getFloatValueFromGet(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromGet($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_GET
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getStringValueFromGet(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromGet($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_GET superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromGet() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_GET
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getBoolValueFromGet(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromGet($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getIntValueFromCookie(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromCookie($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getFloatValueFromCookie(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromCookie($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_COOKIE
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getStringValueFromCookie(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromCookie($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_COOKIE superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromCookie() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_COOKIE
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getBoolValueFromCookie(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromCookie($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getIntValueFromServer(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromServer($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getFloatValueFromServer(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromServer($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_SERVER
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getStringValueFromServer(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromServer($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_SERVER superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromServer() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_SERVER
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getBoolValueFromServer(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromServer($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the int value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to int.
+     * Missing keys and non-numeric values resolve to 0.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getIntValueFromEnv(string $needle, bool $trim = false): int
+    {
+        return (int) $this->getTypedValueFromEnv($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the float value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to float.
+     * Missing keys and non-numeric values resolve to 0.0.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getFloatValueFromEnv(string $needle, bool $trim = false): float
+    {
+        return (float) $this->getTypedValueFromEnv($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Returns the string value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to string.
+     * Missing keys resolve to an empty string.
+     *
+     * @param string $needle       key to look up in $_ENV
+     * @param bool   $trim         passed through to getTypedValue()
+     * @param bool   $forceString  passed through to getTypedValue()
+     * @param bool   $sanitizeHtml passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getStringValueFromEnv(string $needle, bool $trim = false, bool $forceString = false, bool $sanitizeHtml = false): string
+    {
+        $value = $this->getTypedValueFromEnv($needle, $trim, $forceString, $sanitizeHtml);
+
+        return is_array($value) ? '' : (string) $value;
+    }
+
+    /**
+     * Returns the bool value for a key from the $_ENV superglobal.
+     *
+     * Convenience wrapper that casts the result of getTypedValueFromEnv() to bool.
+     * Missing keys resolve to false.
+     *
+     * @param string $needle key to look up in $_ENV
+     * @param bool   $trim   passed through to getTypedValue()
+     *
+     * @throws MaxDepthExceededException if the resolved value nests deeper than DEFAULT_MAX_DEPTH
+     */
+    #[\Override]
+    public function getBoolValueFromEnv(string $needle, bool $trim = false): bool
+    {
+        return (bool) $this->getTypedValueFromEnv($needle, $trim, forceString: false, sanitizeHtml: false);
+    }
+
+    /**
+     * Recursive worker behind {@see getTypedValue()}.
+     *
+     * Kept private and separate from the public entry point so that the
+     * $maxDepth validation runs exactly once per call instead of on every
+     * recursion step.
+     *
+     * @param mixed       $data         variable to resolve and sanitize
+     * @param bool        $trim         passed through to getSanitizedString()
+     * @param bool        $forceString  when true, bool and numeric values are handled as strings
+     * @param bool        $sanitizeHtml passed through to getSanitizedString()
+     * @param int<0, max> $maxDepth     the caller-supplied ceiling, carried down for the error message
+     * @param int<0, max> $depth        nesting level of $data: 0 for the value handed to getTypedValue()
+     *
+     * @return array<array-key,mixed>|bool|int|float|string|null
+     *
+     * @throws MaxDepthExceededException if $data nests deeper than $maxDepth
+     */
+    private function resolve(mixed $data, bool $trim, bool $forceString, bool $sanitizeHtml, int $maxDepth, int $depth): array|bool|int|float|string|null
+    {
+        if (null === $data) {
+            return null;
+        }
+
+        if (is_array($data)) {
+            if ($depth >= $maxDepth) {
+                throw MaxDepthExceededException::create($maxDepth);
+            }
+
+            $res = [];
+            foreach ($data as $key => $value) {
+                $res[$key] = $this->resolve($value, $trim, $forceString, $sanitizeHtml, $maxDepth, $depth + 1);
+            }
+
+            return $res;
+        }
+
+        if (!is_scalar($data)) {
+            return null;
+        }
+
+        if (!$forceString && is_bool($data)) {
+            return $this->getSanitizedBool($data);
+        }
+        if (!$forceString && is_numeric($data)) {
+            return $this->getSanitizedNumber($data);
+        }
+
+        return $this->getSanitizedString((string) $data, $trim, $sanitizeHtml);
     }
 
     /**
@@ -222,47 +810,35 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param bool         $forceString  passed through to getTypedValue()
      * @param bool         $sanitizeHtml passed through to getTypedValue()
      *
-     * @return bool|int|float|string|null the typed value, or null if the key is absent
+     * @return array<array-key,mixed>|bool|int|float|string|null the typed value, or null if the key is absent
      */
-    private function readFromInput($inputType, array &$superglobal, $needle, $trim, $forceString, $sanitizeHtml)
+    private function readFromInput(int $inputType, array &$superglobal, string $needle, bool $trim, bool $forceString, bool $sanitizeHtml, int $maxDepth): array|bool|int|float|string|null
     {
         // filter_input() (and filter_var() on the fallback path below) only handle
         // scalar values: on an array value they return null/false and would end up
         // silently discarding the data. Array values are read directly from the
         // superglobal and passed to getTypedValue(), which already recurses correctly.
         if (array_key_exists($needle, $superglobal) && is_array($superglobal[$needle])) {
-            return $this->getTypedValue($superglobal[$needle], $trim, $forceString, $sanitizeHtml);
+            return $this->getTypedValue($superglobal[$needle], $trim, $forceString, $sanitizeHtml, $maxDepth);
         }
 
         $resultSAPI = filter_input($inputType, $needle, FILTER_UNSAFE_RAW);
 
         if (null !== $resultSAPI) {
-            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml);
+            return $this->getTypedValue($resultSAPI, $trim, $forceString, $sanitizeHtml, $maxDepth);
         }
 
-        return array_key_exists($needle, $superglobal)
-            ? $this->getTypedValue(filter_var($superglobal[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml)
-            : null;
+        return array_key_exists($needle, $superglobal) ? $this->getTypedValue(filter_var($superglobal[$needle], FILTER_UNSAFE_RAW), $trim, $forceString, $sanitizeHtml, $maxDepth) : null;
     }
 
     /**
      * Validates and returns a boolean value.
      *
-     * Selects the appropriate filter constant based on the running PHP version:
-     *  - PHP >= 8.0: FILTER_VALIDATE_BOOL    (canonical name, introduced in 8.0)
-     *  - PHP <  8.0: FILTER_VALIDATE_BOOLEAN (original name, available since 5.2)
-     *
-     * Both constants share the same integer value (258); the branch for the
-     * version NOT running is never evaluated at runtime, so no undefined-constant
-     * error or notice is triggered on either version.
-     *
      * @param bool $value raw boolean value
-     *
-     * @return bool
      */
-    private function getSanitizedBool($value)
+    private function getSanitizedBool(bool $value): bool
     {
-        return filter_var($value, PHP_VERSION_ID >= 80000 ? FILTER_VALIDATE_BOOL : FILTER_VALIDATE_BOOLEAN);
+        return $value;
     }
 
     /**
@@ -271,11 +847,9 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * Adds 0 to promote a numeric string to its native numeric type, then
      * delegates to the appropriate int or float sanitizer.
      *
-     * @param mixed $value must satisfy is_numeric(); behaviour is undefined otherwise
-     *
-     * @return int|float
+     * @param float|int|numeric-string $value must satisfy is_numeric(); behaviour is undefined otherwise
      */
-    private function getSanitizedNumber($value)
+    private function getSanitizedNumber(float|int|string $value): int|float
     {
         $numericValue = $value + 0;
         if (is_int($numericValue)) {
@@ -292,10 +866,8 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * before casting to int.
      *
      * @param int $value integer value to sanitize
-     *
-     * @return int
      */
-    private function getSanitizedIntValue($value)
+    private function getSanitizedIntValue(int $value): int
     {
         return (int) filter_var($value, FILTER_SANITIZE_NUMBER_INT);
     }
@@ -310,12 +882,10 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * exponent marker and silently truncates the value to something numerically wrong.
      *
      * @param float $value float value to return
-     *
-     * @return float
      */
-    private function getSanitizedFloatValue($value)
+    private function getSanitizedFloatValue(float $value): float
     {
-        return (float) $value;
+        return $value;
     }
 
     /**
@@ -329,10 +899,8 @@ final class EffectivePrimitiveTypeIdentifierService implements EffectivePrimitiv
      * @param string $value        raw string value
      * @param bool   $trim         when true, the result is trimmed
      * @param bool   $sanitizeHtml when true, HTML/XSS sanitization is applied
-     *
-     * @return string
      */
-    private function getSanitizedString($value, $trim = false, $sanitizeHtml = false)
+    private function getSanitizedString(string $value, bool $trim = false, bool $sanitizeHtml = false): string
     {
         $result = $sanitizeHtml ? $this->htmlSanitizer->sanitize($value) : filter_var($value, FILTER_UNSAFE_RAW);
 

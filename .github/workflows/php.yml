@@ -1,32 +1,125 @@
-name: PHPUnit Tests
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, version_2 ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  quality:
+    name: Static analysis & code style
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup PHP 8.4
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.4'
-        extensions: mbstring, zip
-        coverage: none
-    
-    - name: Validate composer.json
-      run: composer validate --strict
-    
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-interaction
-    
-    - name: Run PHPUnit tests
-      run: php vendor/bin/phpunit tests/EffectivePrimitiveTypeTest.php
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # The lowest version composer.json supports: php-cs-fixer and rector
+          # must judge the code against the language level users actually get.
+          php-version: '8.3'
+          extensions: mbstring, curl, zip
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-8.3-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-8.3-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: PHPStan (level max)
+        run: vendor/bin/phpstan analyse --no-progress --error-format=github
+
+      - name: PHP-CS-Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: Rector
+        run: vendor/bin/rector process --dry-run --no-progress-bar
+
+  test:
+    name: Tests on PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # composer.json requires ^8.3: both supported versions must stay green.
+        php: ['8.3', '8.4']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, curl, zip
+          coverage: xdebug
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ matrix.php }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run the unit suite
+        run: vendor/bin/phpunit --testsuite unit
+
+      # readFromInput() reads the SAPI input stream with filter_input() and only
+      # falls back to $_GET/$_POST/$_SERVER when that returns null. Under CLI
+      # filter_input() is always null, so the branch that runs in production is
+      # unreachable from the unit suite. PHP's built-in server is a real SAPI and
+      # covers it without needing the docker-compose stack.
+      - name: Start the test endpoint
+        run: |
+          nohup php -S 127.0.0.1:8080 -t . > "${RUNNER_TEMP}/php-server.log" 2>&1 &
+          for attempt in $(seq 1 50); do
+            if curl -fsS "http://127.0.0.1:8080/tests/entrypoint.php" > /dev/null 2>&1; then
+              echo "Endpoint up after ${attempt} attempt(s)."
+              exit 0
+            fi
+            sleep 0.2
+          done
+          echo "::error::The test endpoint never came up."
+          cat "${RUNNER_TEMP}/php-server.log"
+          exit 1
+
+      # --fail-on-skipped is the point of this step: these tests skip themselves
+      # when no endpoint answers, so without it a broken server would leave the
+      # SAPI paths untested and the build green.
+      - name: Run the integration suite against a real SAPI
+        env:
+          TYPEIDENTIFIER_ENDPOINT: http://127.0.0.1:8080/tests/entrypoint.php
+        run: vendor/bin/phpunit --testsuite integration --fail-on-skipped
+
+      - name: Coverage report
+        env:
+          TYPEIDENTIFIER_ENDPOINT: http://127.0.0.1:8080/tests/entrypoint.php
+        run: vendor/bin/phpunit --coverage-text --fail-on-skipped
+
+      - name: Endpoint log on failure
+        if: failure()
+        run: cat "${RUNNER_TEMP}/php-server.log"

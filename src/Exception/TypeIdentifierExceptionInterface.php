@@ -2,12 +2,6 @@
 
 declare(strict_types=1);
 
-namespace TypeIdentifier\Tests;
-
-require_once __DIR__ . '/../vendor/autoload.php';
-
-use PHPUnit\Framework\TestCase;
-
 /*
  * Copyright (C) 2025  Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  *
@@ -26,11 +20,22 @@ use PHPUnit\Framework\TestCase;
  * Boston, MA 02110-1301 USA.
  */
 
+namespace TypeIdentifier\Exception;
+
 /**
- * Description of AbstractTestCase.
+ * Marker interface implemented by every exception thrown by this library.
+ *
+ * Lets consumers catch anything originating from TypeIdentifier with a single
+ * catch block, without coupling to the concrete SPL parent classes:
+ *
+ *     try {
+ *         $value = $ept->getTypedValue($payload);
+ *     } catch (TypeIdentifierExceptionInterface $e) {
+ *         // handle malformed / hostile input
+ *     }
  *
  * @author Stefano Perrini <perrini.stefano@gmail.com> aka La Matrigna
  */
-abstract class AbstractTestCase extends TestCase
+interface TypeIdentifierExceptionInterface extends \Throwable
 {
 }

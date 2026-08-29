@@ -3,6 +3,7 @@
 /entrypoint.sh export-ignore
 /README.md export-ignore
 /phpstan.dist.neon export-ignore
+/phpunit.xml export-ignore
 /Dockerfile export-ignore
 /docker-compose.yml export-ignore
 /.php-cs-fixer.dist.php export-ignore

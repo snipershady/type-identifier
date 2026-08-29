@@ -8,16 +8,15 @@ use Rector\Naming\Rector\Assign\RenameVariableToMatchMethodCallReturnTypeRector;
 use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
 use Rector\Naming\Rector\ClassMethod\RenameVariableToMatchNewTypeRector;
 use Rector\Set\ValueObject\LevelSetList;
+use Rector\TypeDeclaration\Rector\ClassMethod\StringReturnTypeFromStrictScalarReturnsRector;
 use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromAssignsRector;
 use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromStrictSetUpRector;
-use Rector\ValueObject\PhpVersion;
 
 return RectorConfig::configure()
                 ->withPaths([
                     __DIR__ . '/src',
                     __DIR__ . '/tests',
                 ])
-                ->withCache(__DIR__ . '/.rector.cache')
                 ->withSkip([
                     NewlineAfterStatementRector::class,
                     RenamePropertyToMatchTypeRector::class,
@@ -25,8 +24,13 @@ return RectorConfig::configure()
                     RenameVariableToMatchNewTypeRector::class,
                     TypedPropertyFromAssignsRector::class,
                     TypedPropertyFromStrictSetUpRector::class,
-                    Rector\TypeDeclaration\Rector\ClassMethod\StringReturnTypeFromStrictScalarReturnsRector::class,
+                    StringReturnTypeFromStrictScalarReturnsRector::class,
                 ])
+                ->withCache(__DIR__ . '/.rector.cache')
+                ->withImportNames(
+                    importShortClasses: false,
+                    removeUnusedImports: true,
+                )
                 ->withPreparedSets(
                     deadCode: true,
                     codeQuality: true,
@@ -44,10 +48,9 @@ return RectorConfig::configure()
                 )
                 ->withAttributesSets(phpunit: true)
                 ->withComposerBased(phpunit: true)
-                ->withPhpVersion(PhpVersion::PHP_56)
                 ->withSets(
                     [
-                        LevelSetList::UP_TO_PHP_56,
+                        LevelSetList::UP_TO_PHP_83,
                     ]
                 )
 ;

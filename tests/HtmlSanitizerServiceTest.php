@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TypeIdentifier\Tests;
 
 /*
@@ -40,8 +42,7 @@ use TypeIdentifier\Sanitizer\HtmlSanitizerService;
  */
 final class HtmlSanitizerServiceTest extends AbstractTestCase
 {
-    /** @var HtmlSanitizerService */
-    private $sanitizer;
+    private HtmlSanitizerService $sanitizer;
 
     protected function setUp(): void
     {

@@ -1,5 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * PHP-CS-Fixer configuration.
+ *
+ * Base: the full Symfony ruleset plus its "risky" companion (safe to enable
+ * because the codebase has no behavioural traps for it — no loose == / !=, no
+ * unguarded in_array(), etc.). On top of that a handful of rules that push the
+ * style further towards a "strict types" library and keep the PHPUnit suite
+ * idiomatic. Rules already implied by @Symfony are NOT repeated here.
+ */
+
 $finder = (new PhpCsFixer\Finder())
     ->in(__DIR__)
     ->exclude('var')
@@ -7,30 +19,48 @@ $finder = (new PhpCsFixer\Finder())
 ;
 
 return (new PhpCsFixer\Config())
-                ->setRules([
-                    '@Symfony' => true,
-                    'array_syntax' => ['syntax' => 'short'],
-                    'list_syntax' => ['syntax' => 'short'],
-                    'modernize_types_casting' => true,
-                    'is_null' => true,
-                    'no_alias_functions' => true,
-                    'no_unused_imports' => true,
-                    'no_empty_comment' => true,
-                    'no_empty_phpdoc' => true,
-                    'no_useless_return' => true,
-                    'no_useless_else' => true,
-                    'no_empty_statement' => true,
-                    'no_extra_blank_lines' => ['tokens' => ['extra', 'use', 'return']],
-                    'standardize_not_equals' => true,
-                    'single_quote' => true,
-                    'short_scalar_cast' => true,
-                    'magic_constant_casing' => true,
-                    'native_function_casing' => true,
-                    'concat_space' => ['spacing' => 'one'],
-                    'cast_spaces' => ['space' => 'single'],
-                    'object_operator_without_whitespace' => true,
-                    'ternary_operator_spaces' => true,
-                ])
-                ->setRiskyAllowed(true)
-                ->setFinder($finder)
+    ->setRules([
+        '@Symfony' => true,
+        '@Symfony:risky' => true,
+
+        // --- Style overrides that differ from the Symfony defaults ------------
+        // @Symfony:risky would prefix global functions/constants with a leading
+        // "\" (\is_array(), \PHP_INT_MAX, ...). The perf gain is negligible for
+        // this library and it clashes with the existing unprefixed style, so
+        // global symbols are left bare everywhere.
+        'native_function_invocation' => false,
+        'native_constant_invocation' => false,
+        'array_syntax' => ['syntax' => 'short'],
+        'list_syntax' => ['syntax' => 'short'],
+        // Symfony forces no spaces around "."; this project wants "a . b".
+        'concat_space' => ['spacing' => 'one'],
+        'no_extra_blank_lines' => ['tokens' => ['extra', 'use', 'return']],
+
+        // --- Strict-types enforcement --------------------------------------
+        // Guarantee the declare() is present (until now it was added by hand).
+        'declare_strict_types' => true,
+        // == / != are forbidden: always ===, !== and the strict flag.
+        'strict_comparison' => true,
+        'strict_param' => true,
+
+        // NB: class-name imports (turning `\Foo\Bar` FQCN into a `use`) are left
+        // to Rector's ->withImportNames(); php-cs-fixer's global_namespace_import
+        // is intentionally NOT enabled because on this codebase it also pulls in
+        // walls of `use const FILTER_*` / `use const INPUT_*` and rewrites
+        // `#[\Override]`, which is noise rather than clarity.
+
+        // --- PHPUnit ----------------------------------------------------------
+        'php_unit_method_casing' => ['case' => 'camel_case'],
+        'php_unit_fqcn_annotation' => true,
+        'php_unit_set_up_tear_down_visibility' => true,
+        'php_unit_test_annotation' => ['style' => 'prefix'],
+        'php_unit_construct' => true,
+        'php_unit_dedicate_assert' => ['target' => 'newest'],
+        'php_unit_dedicate_assert_internal_type' => ['target' => 'newest'],
+        'php_unit_expectation' => ['target' => 'newest'],
+        'php_unit_mock' => ['target' => 'newest'],
+        'php_unit_no_expectation_annotation' => ['target' => 'newest'],
+    ])
+    ->setRiskyAllowed(true)
+    ->setFinder($finder)
 ;
