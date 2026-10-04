@@ -603,7 +603,7 @@ final class EffectivePrimitiveTypeTest extends AbstractTestCase
         $ept = new EffectivePrimitiveTypeIdentifierService();
         $result = $ept->getTypedValue([]);
         $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->assertSame([], $result);
     }
 
     // -------------------------------------------------------------------------
