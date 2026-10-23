@@ -35,6 +35,10 @@ When working with HTTP requests, legacy codebases, or loosely-typed data sources
 composer require snipershady/typeidentifier
 ```
 
+### Using it with AI coding agents
+
+[`AGENTS.md`](AGENTS.md) is a self-contained integration guide for AI coding agents (Claude Code, Codex, Cursor, Copilot, …): which method to pick for each source and type, flags, defaults, pitfalls and error handling. Copy it into your project root, or append it to your existing `AGENTS.md`, so the agent uses the library correctly. It also ships with the package at `vendor/snipershady/typeidentifier/AGENTS.md`.
+
 ## Requirements
 
 - **PHP 8.3 or higher** (tested up to PHP 8.4)
